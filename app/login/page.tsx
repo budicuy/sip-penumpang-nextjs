@@ -1,4 +1,5 @@
 import { IconUser, IconLogin } from '@tabler/icons-react';
+import Link from 'next/dist/client/link';
 
 export default function LoginPage() {
     return (
@@ -36,10 +37,12 @@ export default function LoginPage() {
                                 </label>
                             </div>
                             <div>
-                                <button type="submit" className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm  font-medium text-white bg-blue-600 hover:bg-blue-950">
-                                    <IconLogin className='mr-1' />
-                                    <div>Masuk</div>
-                                </button>
+                                <Link href='/dashboard'>
+                                    <button type="button" className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm  font-medium text-white bg-blue-600 hover:bg-blue-950">
+                                        <IconLogin className='mr-1' />
+                                        <div>Masuk</div>
+                                    </button>
+                                </Link>
                             </div>
                         </div>
                     </form>

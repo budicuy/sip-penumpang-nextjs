@@ -12,6 +12,12 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) {
+  const handleLinkClick = () => {
+    if (isSidebarOpen) {
+      toggleSidebar();
+    }
+  };
+
   return (
     <aside
       className={`bg-blue-800 text-white w-64 min-h-screen p-4 transform transition-transform md:translate-x-0 fixed md:relative z-30 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -26,7 +32,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
       <nav className="mt-8">
         <ul>
           <li className="mb-4">
-            <Link href="/dashboard" className="flex items-center p-4 rounded bg-blue-700">
+            <Link href="/dashboard" onClick={handleLinkClick} className="flex items-center p-4 rounded bg-blue-700">
               <IconHome className="w-6 h-6 mr-2" />
               Dashboard
             </Link>
@@ -35,7 +41,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
             <span className="text-white/90 text-sm">Kelola</span>
           </li>
           <li className="mb-4">
-            <Link href="/dashboard/penumpang" className="flex items-center justify-between p-4 rounded hover:bg-blue-700">
+            <Link href="/dashboard/penumpang" onClick={handleLinkClick} className="flex items-center justify-between p-4 rounded hover:bg-blue-700">
               <div className="flex items-center">
                 <IconFileText className="w-6 h-6 mr-2" />
                 <span>Data Penumpang</span>
