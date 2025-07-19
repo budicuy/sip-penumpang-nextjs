@@ -16,7 +16,11 @@ export default function LoginPage() {
                             Masuk ke Akun Anda
                         </h2>
                         <p className="mt-2 text-center  text-gray-600">
-                            Masuk atau buat akun baru untuk melanjutkan
+                            Masuk atau buat <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+                                akun baru
+                            </Link> untuk melanjutkan
+
+
                         </p>
                     </div>
                     <form className='mt-5 w-full px-5' method='post'>
