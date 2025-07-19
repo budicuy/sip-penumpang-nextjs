@@ -1,4 +1,4 @@
-import { IconUserPlus, IconLogin } from '@tabler/icons-react';
+import { IconUserPlus } from '@tabler/icons-react';
 import Link from 'next/link';
 
 export default function RegisterPage() {
