@@ -9,11 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@auth/prisma-adapter": "^2.10.0",
     "@prisma/client": "^6.12.0",
     "@tabler/icons-react": "^3.34.0",
     "next": "15.4.2",
-    "next-auth": "5.0.0-beta.29",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
