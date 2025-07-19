@@ -1,0 +1,3 @@
+- Gunakan bahasa Indonesia untuk menjelaskan perubahan yang dilakukan pada kode berikut.
+- Selalu gunakan code yang ringkas dan jelas.
+- selalu gunakan code yang standar dan dari sumber dokumentasi terbaru.
