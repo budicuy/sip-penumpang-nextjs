@@ -60,7 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-5">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-5 ">
           {children}
         </main>
       </div>
