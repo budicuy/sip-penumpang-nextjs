@@ -3,3 +3,4 @@
 - selalu gunakan code yang standar dan dari sumber dokumentasi terbaru.
 - Gunakan PNPM untuk mengelola dependensi.
 - Jangan menghapus kode yang sudah ada, hanya tambahkan atau modifikasi sesuai kebutuhan.
+- jangan menjalankan "pnpm dev" biat menghindari error yang tidak perlu.

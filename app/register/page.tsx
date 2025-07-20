@@ -1,7 +1,41 @@
+'use client';
+
 import { IconUserPlus } from '@tabler/icons-react';
 import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
+    const router = useRouter();
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, email, password }),
+            });
+
+            if (res.ok) {
+                router.push('/login');
+            } else {
+                const data = await res.json();
+                setError(data.error || 'Pendaftaran gagal');
+            }
+        } catch (error) {
+            setError('Terjadi kesalahan');
+        }
+    };
+
     return (
         <div className='bg-gradient-to-br from-white to-green-400'>
             <div className="container mx-auto h-screen flex items-center justify-center">
@@ -22,19 +56,20 @@ export default function RegisterPage() {
                             </Link>
                         </p>
                     </div>
-                    <form className='mt-5 w-full px-5' method='post'>
+                    <form className='mt-5 w-full px-5' onSubmit={handleSubmit}>
                         <div className="rounded-md p-10 bg-white drop-shadow-xl space-y-4">
+                            {error && <p className="text-red-500 text-center">{error}</p>}
                             <div>
                                 <label htmlFor="name" className="block font-medium text-gray-700 mb-1">Nama Lengkap</label>
-                                <input id="name" name="name" type="text" required className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 border-gray-300" placeholder="Masukkan nama lengkap Anda" />
+                                <input id="name" name="name" type="text" required className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 border-gray-300" placeholder="Masukkan nama lengkap Anda" value={name} onChange={(e) => setName(e.target.value)} />
                             </div>
                             <div>
                                 <label htmlFor="email" className="block font-medium text-gray-700 mb-1">Email</label>
-                                <input id="email" name="email" type="email" autoComplete="email" required className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 border-gray-300" placeholder="Masukkan email Anda" />
+                                <input id="email" name="email" type="email" autoComplete="email" required className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 border-gray-300" placeholder="Masukkan email Anda" value={email} onChange={(e) => setEmail(e.target.value)} />
                             </div>
                             <div>
                                 <label htmlFor="password" className="block font-medium text-gray-700 mb-1">Password</label>
-                                <input id="password" name="password" type="password" required className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 border-gray-300" placeholder="Masukkan password Anda" />
+                                <input id="password" name="password" type="password" required className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 border-gray-300" placeholder="Masukkan password Anda" value={password} onChange={(e) => setPassword(e.target.value)} />
                             </div>
                             <div>
                                 <button type="submit" className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm font-medium text-white bg-green-600 hover:bg-green-900">

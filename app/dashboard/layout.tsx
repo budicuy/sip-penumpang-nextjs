@@ -5,14 +5,25 @@ import {
   IconMenu2,
 } from "@tabler/icons-react";
 import Sidebar from "./Sidebar";
-import Link from "next/dist/client/link";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const router = useRouter();
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+
+  const logout = async () => {
+    try {
+        await axios.get('/api/auth/logout');
+        router.push('/login');
+    } catch (error: any) {
+        console.log(error.message);
+    }
+  }
 
   return (
     <div className="relative min-h-screen md:flex">
@@ -38,12 +49,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               Dashboard
             </div>
           </div>
-          <Link href="/login" className="flex items-center space-x-2 text-gray-500 hover:text-gray-700">
-            <div className="flex items-center space-x-2 text-red-500 hover:text-red-700">
+          <button onClick={logout} className="flex items-center space-x-2 text-red-500 hover:text-red-700">
               <span className="">Logout</span>
               <IconLogout className="w-6 h-6" />
-            </div>
-          </Link>
+          </button>
         </header>
 
         {/* Content */}

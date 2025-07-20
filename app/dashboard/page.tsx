@@ -1,15 +1,18 @@
-"use client";
+'use client';
 import {
     IconBriefcase,
     IconListCheck,
     IconUsers,
-    IconBolt,
+    IconBolt
 } from "@tabler/icons-react";
 
 export default function Dashboard() {
+
     return (
         <>
-            <h1 className="text-2xl lg:text-4xl font-bold text-black mb-5">Dashboard</h1>
+            <div className="flex justify-between items-center mb-5">
+                <h1 className="text-2xl lg:text-4xl font-bold text-black">Dashboard</h1>
+            </div>
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

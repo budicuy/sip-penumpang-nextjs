@@ -1,7 +1,40 @@
+'use client';
+
 import { IconUser, IconLogin } from '@tabler/icons-react';
-import Link from 'next/dist/client/link';
+import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+    const router = useRouter();
+    const [email, setEmail] = useState('admin@example.com');
+    const [password, setPassword] = useState('password');
+    const [error, setError] = useState('');
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
+
+            if (res.ok) {
+                router.push('/dashboard');
+            } else {
+                const data = await res.json();
+                setError(data.error || 'Login gagal');
+            }
+        } catch (error) {
+            setError('Terjadi kesalahan');
+        }
+    };
+
     return (
         <div className='bg-gradient-to-br from-white to-blue-400'>
             <div className="container mx-auto h-screen flex items-center justify-center">
@@ -19,19 +52,18 @@ export default function LoginPage() {
                             Masuk atau buat <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
                                 akun baru
                             </Link> untuk melanjutkan
-
-
                         </p>
                     </div>
-                    <form className='mt-5 w-full px-5' method='post'>
+                    <form className='mt-5 w-full px-5' onSubmit={handleSubmit}>
                         <div className="rounded-md p-10 bg-white drop-shadow-xl space-y-4">
+                            {error && <p className="text-red-500 text-center">{error}</p>}
                             <div>
                                 <label htmlFor="email" className="block  font-medium text-gray-700 mb-1">Email</label>
-                                <input id="email" name="email" type="email" autoComplete="email" className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 border-gray-300" placeholder="Masukkan email Anda" value="admin@example.com" />
+                                <input id="email" name="email" type="email" className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 border-gray-300" placeholder="Masukkan email Anda" value={email} onChange={(e) => setEmail(e.target.value)} />
                             </div>
                             <div>
                                 <label htmlFor="password" className="block  font-medium text-gray-700 mb-1">Password</label>
-                                <input id="password" name="password" type="password" className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 border-gray-300" placeholder="Masukkan password Anda" value="password" />
+                                <input id="password" name="password" type="password" className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 border-gray-300" placeholder="Masukkan password Anda" value={password} onChange={(e) => setPassword(e.target.value)} />
                             </div>
                             {/* remember me */}
                             <div className="flex items-center">
@@ -41,12 +73,10 @@ export default function LoginPage() {
                                 </label>
                             </div>
                             <div>
-                                <Link href='/dashboard'>
-                                    <button type="button" className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm  font-medium text-white bg-blue-600 hover:bg-blue-950">
-                                        <IconLogin className='mr-1' />
-                                        <div>Masuk</div>
-                                    </button>
-                                </Link>
+                                <button type="submit" className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm  font-medium text-white bg-blue-600 hover:bg-blue-950">
+                                    <IconLogin className='mr-1' />
+                                    <div>Masuk</div>
+                                </button>
                             </div>
                         </div>
                     </form>
