@@ -1,6 +1,7 @@
 "use client";
 import { IconEdit, IconTrash, IconEye, IconPlus, IconDownload, IconSearch } from "@tabler/icons-react";
 import { useState, useEffect, FormEvent } from "react";
+import Papa from "papaparse";
 
 interface Penumpang {
     id: string;
@@ -28,17 +29,53 @@ export default function Penumpang() {
     );
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
+    const [filteredPenumpang, setFilteredPenumpang] = useState<Penumpang[]>([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filterStartDate, setFilterStartDate] = useState("");
+    const [filterEndDate, setFilterEndDate] = useState("");
+    const [filterStartTime, setFilterStartTime] = useState("");
+    const [filterEndTime, setFilterEndTime] = useState("");
 
     useEffect(() => {
         fetchPenumpang();
     }, []);
+
+    useEffect(() => {
+        let filtered = penumpang;
+
+        if (searchTerm) {
+            filtered = filtered.filter(p =>
+                p.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                p.tujuan.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                p.nopol.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        if (filterStartDate) {
+            filtered = filtered.filter(p => new Date(p.tanggal) >= new Date(filterStartDate));
+        }
+
+        if (filterEndDate) {
+            filtered = filtered.filter(p => new Date(p.tanggal) <= new Date(filterEndDate));
+        }
+
+        if (filterStartTime) {
+            filtered = filtered.filter(p => new Date(p.jam).toTimeString().split(' ')[0] >= filterStartTime);
+        }
+
+        if (filterEndTime) {
+            filtered = filtered.filter(p => new Date(p.jam).toTimeString().split(' ')[0] <= filterEndTime);
+        }
+
+        setFilteredPenumpang(filtered.slice(0, 50));
+    }, [penumpang, searchTerm, filterStartDate, filterEndDate, filterStartTime, filterEndTime]);
 
     const fetchPenumpang = async () => {
         setIsLoading(true);
         try {
             const response = await fetch("/api/penumpang");
             const data = await response.json();
-            setPenumpang(data.slice(0, 50));
+            setPenumpang(data);
         } catch (error) {
             console.error("Error fetching penumpang:", error);
         } finally {
@@ -145,6 +182,33 @@ export default function Penumpang() {
         }
     };
 
+    const handleExportAllCSV = () => {
+        const csv = Papa.unparse(filteredPenumpang);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'all_penumpang.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleExportSelectedCSV = () => {
+        const dataToExport = penumpang.filter(p => selectedRows.includes(p.id));
+        const csv = Papa.unparse(dataToExport);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'selected_penumpang.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div>
             <h1 className="text-2xl lg:text-4xl font-bold text-black mb-5">
@@ -168,11 +232,11 @@ export default function Penumpang() {
                     </button>
                     {/* Expot CSV */}
                     <button
-                        onClick={() => alert("Export to CSV feature coming soon!")}
+                        onClick={handleExportAllCSV}
                         className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center"
                     >
                         <IconDownload className="w-5 h-5 mr-2" />
-                        Export to CSV
+                        Export All to CSV
                     </button>
                     <button
                         onClick={() => alert("Export to PDF feature coming soon!")}
@@ -182,13 +246,22 @@ export default function Penumpang() {
                         Export to PDF
                     </button>
                     {selectedRows.length > 0 && (
-                        <button
-                            onClick={handleDeleteSelected}
-                            className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center"
-                        >
-                            <IconTrash className="w-5 h-5 mr-2" />
-                            Delete Selected ({selectedRows.length})
-                        </button>
+                        <>
+                            <button
+                                onClick={handleExportSelectedCSV}
+                                className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
+                            >
+                                <IconDownload className="w-5 h-5 mr-2" />
+                                Export Selected to CSV ({selectedRows.length})
+                            </button>
+                            <button
+                                onClick={handleDeleteSelected}
+                                className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center"
+                            >
+                                <IconTrash className="w-5 h-5 mr-2" />
+                                Delete Selected ({selectedRows.length})
+                            </button>
+                        </>
                     )}
                 </div>
                 {/* filter pencarian */}
@@ -198,6 +271,8 @@ export default function Penumpang() {
                         type="text"
                         placeholder="Cari nama data penumpang..."
                         className="w-full px-3 py-2 rounded focus:outline-none"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
 
@@ -208,6 +283,8 @@ export default function Penumpang() {
                         <input
                             type="date"
                             className="w-full px-3 py-2 border rounded"
+                            value={filterStartDate}
+                            onChange={(e) => setFilterStartDate(e.target.value)}
                         />
                     </div>
                     <div>
@@ -215,6 +292,8 @@ export default function Penumpang() {
                         <input
                             type="date"
                             className="w-full px-3 py-2 border rounded"
+                            value={filterEndDate}
+                            onChange={(e) => setFilterEndDate(e.target.value)}
                         />
                     </div>
 
@@ -223,6 +302,8 @@ export default function Penumpang() {
                         <input
                             type="time"
                             className="w-full px-3 py-2 border rounded"
+                            value={filterStartTime}
+                            onChange={(e) => setFilterStartTime(e.target.value)}
                         />
                     </div>
                     <div>
@@ -230,6 +311,8 @@ export default function Penumpang() {
                         <input
                             type="time"
                             className="w-full px-3 py-2 border rounded"
+                            value={filterEndTime}
+                            onChange={(e) => setFilterEndTime(e.target.value)}
                         />
                     </div>
                 </div>
@@ -291,7 +374,7 @@ export default function Penumpang() {
                                     </td>
                                 </tr>
                             ) : (
-                                penumpang.map((item, index) => (
+                                filteredPenumpang.map((item, index) => (
                                     <tr
                                         key={item.id}
                                         className={`hover:bg-gray-100 border-b border-gray-200 ${selectedRows.includes(item.id) ? 'bg-blue-100' : ''}`}>
