@@ -2,7 +2,16 @@
 import { IconEdit, IconTrash, IconEye, IconPlus, IconDownload, IconSearch } from "@tabler/icons-react";
 import { useState, useEffect, FormEvent } from "react";
 import Papa from "papaparse";
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import dynamic from 'next/dynamic';
+
+const PDFDownloadLink = dynamic(
+    () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
+    {
+        ssr: false,
+        loading: () => <p>Loading...</p>
+    }
+);
+
 import PdfDocument from './PdfDocument';
 
 interface Penumpang {
@@ -22,13 +31,9 @@ interface Penumpang {
 export default function Penumpang() {
     const [penumpang, setPenumpang] = useState<Penumpang[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedPenumpang, setSelectedPenumpang] = useState<Penumpang | null>(
-        null
-    );
+    const [selectedPenumpang, setSelectedPenumpang] = useState<Penumpang | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalType, setModalType] = useState<"add" | "edit" | "view">(
-        "add"
-    );
+    const [modalType, setModalType] = useState<"add" | "edit" | "view">("add");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [filteredPenumpang, setFilteredPenumpang] = useState<Penumpang[]>([]);
@@ -37,9 +42,11 @@ export default function Penumpang() {
     const [filterEndDate, setFilterEndDate] = useState("");
     const [filterStartTime, setFilterStartTime] = useState("");
     const [filterEndTime, setFilterEndTime] = useState("");
+    const [isPdfReady, setIsPdfReady] = useState(false);
 
     useEffect(() => {
         fetchPenumpang();
+        setIsPdfReady(true);
     }, []);
 
     useEffect(() => {
@@ -85,10 +92,7 @@ export default function Penumpang() {
         }
     };
 
-    const handleModalOpen = (
-        type: "add" | "edit" | "view",
-        penumpang?: Penumpang
-    ) => {
+    const handleModalOpen = (type: "add" | "edit" | "view", penumpang?: Penumpang) => {
         setModalType(type);
         setSelectedPenumpang(penumpang || null);
         setIsModalOpen(true);
@@ -221,10 +225,8 @@ export default function Penumpang() {
                     <h2 className="text-xl font-semibold text-gray-800">
                         Manifest Data Penumpang
                     </h2>
-
                 </div>
                 <div className="mb-4 grid gap-2 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-                    {/* tambah data */}
                     <button
                         onClick={() => handleModalOpen("add")}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center"
@@ -232,7 +234,6 @@ export default function Penumpang() {
                         <IconPlus className="w-5 h-5 mr-2" />
                         Tambah Data
                     </button>
-                    {/* Expot CSV */}
                     <button
                         onClick={handleExportAllCSV}
                         className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center"
@@ -240,15 +241,22 @@ export default function Penumpang() {
                         <IconDownload className="w-5 h-5 mr-2" />
                         Export All to CSV
                     </button>
-                    <PDFDownloadLink
-                        document={<PdfDocument data={filteredPenumpang} />}
-                        fileName="penumpang.pdf"
-                        className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center"
-                    >
-                        {({ blob, url, loading, error }) =>
-                            loading ? 'Loading document...' : <><IconDownload className="w-5 h-5 mr-2" /> Export to PDF</>
-                        }
-                    </PDFDownloadLink>
+                    {isPdfReady && (
+                        <PDFDownloadLink
+                            document={<PdfDocument data={filteredPenumpang} />}
+                            fileName="penumpang.pdf"
+                            className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center"
+                        >
+                            {({ loading }) =>
+                                loading ? 'Loading document...' : (
+                                    <>
+                                        <IconDownload className="w-5 h-5 mr-2" />
+                                        Export to PDF
+                                    </>
+                                )
+                            }
+                        </PDFDownloadLink>
+                    )}
                     {selectedRows.length > 0 && (
                         <>
                             <button
@@ -268,7 +276,6 @@ export default function Penumpang() {
                         </>
                     )}
                 </div>
-                {/* filter pencarian */}
                 <div className="mb-4 flex items-center space-x-2 border border-gray-300 rounded-lg px-3">
                     <IconSearch className="w-5 h-5 inline-block mr-2" />
                     <input
@@ -279,8 +286,6 @@ export default function Penumpang() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-
-                {/* Filter Tanggal dan jam */}
                 <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label className="block text-gray-700 mb-1">Dari Tanggal</label>
@@ -300,7 +305,6 @@ export default function Penumpang() {
                             onChange={(e) => setFilterEndDate(e.target.value)}
                         />
                     </div>
-
                     <div>
                         <label className="block text-gray-700 mb-1">Dari Jam</label>
                         <input
@@ -320,7 +324,6 @@ export default function Penumpang() {
                         />
                     </div>
                 </div>
-
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead>
@@ -332,56 +335,31 @@ export default function Penumpang() {
                                         checked={filteredPenumpang.length > 0 && selectedRows.length === filteredPenumpang.length}
                                     />
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                                    No
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                                    Nama
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                                    Usia
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                                    Jenis Kelamin
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                                    Tujuan
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                                    Tanggal
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                                    Jam
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                                    No. Polisi
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                                    Jenis Kendaraan
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                                    Golongan
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                                    Kapal
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                                    Aksi
-                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">No</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Nama</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Usia</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Jenis Kelamin</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Tujuan</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Tanggal</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Jam</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">No. Polisi</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Jenis Kendaraan</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Golongan</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Kapal</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={12} className="text-center py-4">
-                                        Loading...
-                                    </td>
+                                    <td colSpan={13} className="text-center py-4">Loading...</td>
                                 </tr>
                             ) : (
                                 filteredPenumpang.map((item, index) => (
                                     <tr
                                         key={item.id}
-                                        className={`hover:bg-gray-100 border-b border-gray-200 ${selectedRows.includes(item.id) ? 'bg-blue-100' : ''}`}>
+                                        className={`hover:bg-gray-100 border-b border-gray-200 ${selectedRows.includes(item.id) ? 'bg-blue-100' : ''}`}
+                                    >
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <input
                                                 type="checkbox"
@@ -392,9 +370,7 @@ export default function Penumpang() {
                                         <td className="px-6 py-4 whitespace-nowrap">{index + 1}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">{item.nama}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">{item.usia}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {item.jenisKelamin}
-                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">{item.jenisKelamin}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">{item.tujuan}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {new Date(item.tanggal).toLocaleDateString()}
@@ -403,12 +379,8 @@ export default function Penumpang() {
                                             {new Date(item.jam).toLocaleTimeString()}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">{item.nopol}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {item.jenisKendaraan}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {item.golongan}
-                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">{item.jenisKendaraan}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">{item.golongan}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">{item.kapal}</td>
                                         <td className="px-6 py-4 whitespace-nowrap flex items-center space-x-1">
                                             <button
@@ -425,7 +397,8 @@ export default function Penumpang() {
                                             </button>
                                             <button
                                                 onClick={() => handleModalOpen("view", item)}
-                                                className="text-green-600 hover:text-green-800 p-2 bg-green-100 rounded">
+                                                className="text-green-600 hover:text-green-800 p-2 bg-green-100 rounded"
+                                            >
                                                 <IconEye className="w-4 h-4" />
                                             </button>
                                         </td>
@@ -447,46 +420,16 @@ export default function Penumpang() {
                         </h2>
                         {modalType === "view" ? (
                             <div>
-                                <p>
-                                    <strong>Nama:</strong> {selectedPenumpang?.nama}
-                                </p>
-                                <p>
-                                    <strong>Usia:</strong> {selectedPenumpang?.usia}
-                                </p>
-                                <p>
-                                    <strong>Jenis Kelamin:</strong>{" "}
-                                    {selectedPenumpang?.jenisKelamin}
-                                </p>
-                                <p>
-                                    <strong>Tujuan:</strong> {selectedPenumpang?.tujuan}
-                                </p>
-                                <p>
-                                    <strong>Tanggal:</strong>{" "}
-                                    {selectedPenumpang?.tanggal
-                                        ? new Date(
-                                            selectedPenumpang.tanggal
-                                        ).toLocaleDateString()
-                                        : ""}
-                                </p>
-                                <p>
-                                    <strong>Jam:</strong>{" "}
-                                    {selectedPenumpang?.jam
-                                        ? new Date(selectedPenumpang.jam).toLocaleTimeString()
-                                        : ""}
-                                </p>
-                                <p>
-                                    <strong>No. Polisi:</strong> {selectedPenumpang?.nopol}
-                                </p>
-                                <p>
-                                    <strong>Jenis Kendaraan:</strong>{" "}
-                                    {selectedPenumpang?.jenisKendaraan}
-                                </p>
-                                <p>
-                                    <strong>Golongan:</strong> {selectedPenumpang?.golongan}
-                                </p>
-                                <p>
-                                    <strong>Kapal:</strong> {selectedPenumpang?.kapal}
-                                </p>
+                                <p><strong>Nama:</strong> {selectedPenumpang?.nama}</p>
+                                <p><strong>Usia:</strong> {selectedPenumpang?.usia}</p>
+                                <p><strong>Jenis Kelamin:</strong> {selectedPenumpang?.jenisKelamin}</p>
+                                <p><strong>Tujuan:</strong> {selectedPenumpang?.tujuan}</p>
+                                <p><strong>Tanggal:</strong> {selectedPenumpang?.tanggal ? new Date(selectedPenumpang.tanggal).toLocaleDateString() : ""}</p>
+                                <p><strong>Jam:</strong> {selectedPenumpang?.jam ? new Date(selectedPenumpang.jam).toLocaleTimeString() : ""}</p>
+                                <p><strong>No. Polisi:</strong> {selectedPenumpang?.nopol}</p>
+                                <p><strong>Jenis Kendaraan:</strong> {selectedPenumpang?.jenisKendaraan}</p>
+                                <p><strong>Golongan:</strong> {selectedPenumpang?.golongan}</p>
+                                <p><strong>Kapal:</strong> {selectedPenumpang?.kapal}</p>
                                 <button
                                     onClick={handleModalClose}
                                     className="mt-4 bg-gray-500 text-white px-4 py-2 rounded"
@@ -495,10 +438,7 @@ export default function Penumpang() {
                                 </button>
                             </div>
                         ) : (
-                            <form
-                                onSubmit={handleSubmit}
-                                className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                            >
+                            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="mb-4">
                                     <label className="block text-gray-700">Nama</label>
                                     <input
@@ -548,13 +488,7 @@ export default function Penumpang() {
                                     <input
                                         type="date"
                                         name="tanggal"
-                                        defaultValue={
-                                            selectedPenumpang?.tanggal
-                                                ? new Date(selectedPenumpang.tanggal)
-                                                    .toISOString()
-                                                    .split("T")[0]
-                                                : ""
-                                        }
+                                        defaultValue={selectedPenumpang?.tanggal ? new Date(selectedPenumpang.tanggal).toISOString().split("T")[0] : ""}
                                         className="w-full px-3 py-2 border rounded"
                                         required
                                     />
@@ -564,13 +498,7 @@ export default function Penumpang() {
                                     <input
                                         type="time"
                                         name="jam"
-                                        defaultValue={
-                                            selectedPenumpang?.jam
-                                                ? new Date(selectedPenumpang.jam)
-                                                    .toTimeString()
-                                                    .split(" ")[0]
-                                                : ""
-                                        }
+                                        defaultValue={selectedPenumpang?.jam ? new Date(selectedPenumpang.jam).toTimeString().split(" ")[0] : ""}
                                         className="w-full px-3 py-2 border rounded"
                                         required
                                     />
@@ -586,9 +514,7 @@ export default function Penumpang() {
                                     />
                                 </div>
                                 <div className="mb-4">
-                                    <label className="block text-gray-700">
-                                        Jenis Kendaraan
-                                    </label>
+                                    <label className="block text-gray-700">Jenis Kendaraan</label>
                                     <input
                                         type="text"
                                         name="jenisKendaraan"
