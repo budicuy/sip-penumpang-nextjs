@@ -41,7 +41,7 @@ export default function Home() {
             <div className="absolute -top-16 -right-10 w-72 h-72 bg-blue-500 rounded-full opacity-30 blur-3xl animate-blob"></div>
             <div className="absolute -bottom-24 left-10 w-72 h-72 bg-green-500 rounded-full opacity-30 blur-3xl animate-blob animation-delay-2000"></div>
             <div className="relative z-10 p-8 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl">
-              <Image src="/globe.svg" alt="Globe" width={300} height={300} className="mx-auto" />
+              <Image src="/vercel.svg" alt="Globe" width={300} height={300} className="mx-auto" />
             </div>
           </div>
         </div>

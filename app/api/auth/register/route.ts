@@ -22,8 +22,11 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ message: 'Pendaftaran berhasil', user }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Terjadi kesalahan pada server' }, { status: 500 });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: 'Terjadi kesalahan yang tidak diketahui' }, { status: 500 });
 
   }
 }

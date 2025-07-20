@@ -10,10 +10,12 @@ export default function LoginPage() {
     const [email, setEmail] = useState('admin@example.com');
     const [password, setPassword] = useState('password');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setLoading(true);
 
         try {
             const res = await fetch('/api/auth/login', {
@@ -29,9 +31,12 @@ export default function LoginPage() {
             } else {
                 const data = await res.json();
                 setError(data.error || 'Login gagal');
+                setLoading(false);
             }
-        } catch (error) {
+        } catch (e) {
+            console.error(e);
             setError('Terjadi kesalahan');
+            setLoading(false);
         }
     };
 
@@ -73,9 +78,21 @@ export default function LoginPage() {
                                 </label>
                             </div>
                             <div>
-                                <button type="submit" className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm  font-medium text-white bg-blue-600 hover:bg-blue-950">
-                                    <IconLogin className='mr-1' />
-                                    <div>Masuk</div>
+                                <button type="submit" className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm  font-medium text-white bg-blue-600 hover:bg-blue-950 disabled:bg-blue-300" disabled={loading}>
+                                    {loading ? (
+                                        <>
+                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span>Processing...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <IconLogin className='mr-1' />
+                                            <div>Masuk</div>
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>

@@ -20,8 +20,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     try {
       await axios.get('/api/auth/logout');
       router.push('/login');
-    } catch (error: any) {
-      console.log(error.message);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.log(error.message);
+        } else {
+            console.log('An unknown error occurred');
+        }
     }
   }
 
