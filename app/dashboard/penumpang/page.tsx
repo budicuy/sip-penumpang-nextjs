@@ -151,7 +151,7 @@ export default function Penumpang() {
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
-            const allIds = penumpang.map((p) => p.id);
+            const allIds = filteredPenumpang.map((p) => p.id);
             setSelectedRows(allIds);
         } else {
             setSelectedRows([]);
@@ -325,7 +325,7 @@ export default function Penumpang() {
                                     <input
                                         type="checkbox"
                                         onChange={handleSelectAll}
-                                        checked={selectedRows.length === penumpang.length && penumpang.length > 0}
+                                        checked={filteredPenumpang.length > 0 && selectedRows.length === filteredPenumpang.length}
                                     />
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
