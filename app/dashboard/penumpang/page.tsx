@@ -1,5 +1,5 @@
 "use client";
-import { IconEdit, IconTrash, IconEye, IconPlus } from "@tabler/icons-react";
+import { IconEdit, IconTrash, IconEye, IconPlus, IconDownload, IconSearch } from "@tabler/icons-react";
 import { useState, useEffect, FormEvent } from "react";
 
 interface Penumpang {
@@ -18,6 +18,7 @@ interface Penumpang {
 
 export default function Penumpang() {
     const [penumpang, setPenumpang] = useState<Penumpang[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [selectedPenumpang, setSelectedPenumpang] = useState<Penumpang | null>(
         null
     );
@@ -31,12 +32,15 @@ export default function Penumpang() {
     }, []);
 
     const fetchPenumpang = async () => {
+        setIsLoading(true);
         try {
             const response = await fetch("/api/penumpang");
             const data = await response.json();
-            setPenumpang(data);
+            setPenumpang(data.slice(0, 50));
         } catch (error) {
             console.error("Error fetching penumpang:", error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -111,8 +115,12 @@ export default function Penumpang() {
             <div className="bg-white p-6 rounded-lg shadow mb-6">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-800">
-                        Data Penumpang
+                        Manifest Data Penumpang
                     </h2>
+
+                </div>
+                <div className="mb-4 grid gap-2 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+                    {/* tambah data */}
                     <button
                         onClick={() => handleModalOpen("add")}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center"
@@ -120,12 +128,72 @@ export default function Penumpang() {
                         <IconPlus className="w-5 h-5 mr-2" />
                         Tambah Data
                     </button>
+                    {/* Expot CSV */}
+                    <button
+                        onClick={() => alert("Export to CSV feature coming soon!")}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center"
+                    >
+                        <IconDownload className="w-5 h-5 mr-2" />
+                        Export to CSV
+                    </button>
+                    <button
+                        onClick={() => alert("Export to PDF feature coming soon!")}
+                        className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center"
+                    >
+                        <IconDownload className="w-5 h-5 mr-2" />
+                        Export to PDF
+                    </button>
+                </div>
+                {/* filter pencarian */}
+                <div className="mb-4 flex items-center space-x-2 border border-gray-300 rounded-lg px-3">
+                    <IconSearch className="w-5 h-5 inline-block mr-2" />
+                    <input
+                        type="text"
+                        placeholder="Cari nama data penumpang..."
+                        className="w-full px-3 py-2 rounded focus:outline-none"
+                    />
+                </div>
+
+                {/* Filter Tanggal dan jam */}
+                <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label className="block text-gray-700 mb-1">Dari Tanggal</label>
+                        <input
+                            type="date"
+                            className="w-full px-3 py-2 border rounded"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-gray-700 mb-1">Sampai Tanggal</label>
+                        <input
+                            type="date"
+                            className="w-full px-3 py-2 border rounded"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-700 mb-1">Dari Jam</label>
+                        <input
+                            type="time"
+                            className="w-full px-3 py-2 border rounded"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-gray-700 mb-1">Sampai Jam</label>
+                        <input
+                            type="time"
+                            className="w-full px-3 py-2 border rounded"
+                        />
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead>
                             <tr className="bg-blue-600 text-white">
+                                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                                    <input type="checkbox" /> {/* Checkbox for selecting all */}
+                                </th>
                                 <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
                                     No
                                 </th>
@@ -165,53 +233,64 @@ export default function Penumpang() {
                             </tr>
                         </thead>
                         <tbody>
-                            {penumpang.map((item, index) => (
-                                <tr
-                                    key={item.id}
-                                    className="hover:bg-gray-100 border-b border-gray-200"
-                                >
-                                    <td className="px-6 py-4 whitespace-nowrap">{index + 1}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{item.nama}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{item.usia}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        {item.jenisKelamin}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{item.tujuan}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        {new Date(item.tanggal).toLocaleDateString()}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        {new Date(item.jam).toLocaleTimeString()}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{item.nopol}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        {item.jenisKendaraan}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        {item.golongan}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{item.kapal}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap flex items-center space-x-1">
-                                        <button
-                                            onClick={() => handleModalOpen("edit", item)}
-                                            className="text-blue-600 hover:text-blue-800 p-2 bg-blue-100 rounded"
-                                        >
-                                            <IconEdit className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(item.id)}
-                                            className="text-red-600 hover:text-red-800 ml-2 p-2 bg-red-100 rounded"
-                                        >
-                                            <IconTrash className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleModalOpen("view", item)}
-                                            className="text-green-600 hover:text-green-800 p-2 bg-green-100 rounded">
-                                            <IconEye className="w-4 h-4" />
-                                        </button>
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan={12} className="text-center py-4">
+                                        Loading...
                                     </td>
                                 </tr>
-                            ))}
+                            ) : (
+                                penumpang.map((item, index) => (
+                                    <tr
+                                        key={item.id}
+                                        className="hover:bg-gray-100 border-b border-gray-200"
+                                    >
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <input type="checkbox" />
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">{index + 1}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">{item.nama}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">{item.usia}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {item.jenisKelamin}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">{item.tujuan}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {new Date(item.tanggal).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {new Date(item.jam).toLocaleTimeString()}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">{item.nopol}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {item.jenisKendaraan}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {item.golongan}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">{item.kapal}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap flex items-center space-x-1">
+                                            <button
+                                                onClick={() => handleModalOpen("edit", item)}
+                                                className="text-blue-600 hover:text-blue-800 p-2 bg-blue-100 rounded"
+                                            >
+                                                <IconEdit className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(item.id)}
+                                                className="text-red-600 hover:text-red-800 p-2 bg-red-100 rounded"
+                                            >
+                                                <IconTrash className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleModalOpen("view", item)}
+                                                className="text-green-600 hover:text-green-800 p-2 bg-green-100 rounded">
+                                                <IconEye className="w-4 h-4" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
