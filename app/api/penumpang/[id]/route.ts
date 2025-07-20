@@ -5,13 +5,13 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const { id } = params;
     const penumpang = await prisma.penumpang.findUnique({
       where: {
-        id: id,
+        id,
       },
     });
 
@@ -20,14 +20,18 @@ export async function GET(
     }
 
     return NextResponse.json(penumpang);
-  } catch {
-    return NextResponse.json({ error: 'Error fetching penumpang' }, { status: 500 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: 'Error fetching penumpang' },
+      { status: 500 },
+    );
   }
 }
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const { id } = params;
@@ -47,7 +51,7 @@ export async function PUT(
 
     const updatedPenumpang = await prisma.penumpang.update({
       where: {
-        id: id,
+        id,
       },
       data: {
         nama,
@@ -64,25 +68,36 @@ export async function PUT(
     });
 
     return NextResponse.json(updatedPenumpang);
-  } catch {
-    return NextResponse.json({ error: 'Error updating penumpang' }, { status: 500 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: 'Error updating penumpang' },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const { id } = params;
     await prisma.penumpang.delete({
       where: {
-        id: id,
+        id,
       },
     });
 
-    return NextResponse.json({ message: 'Penumpang deleted successfully' });
-  } catch {
-    return NextResponse.json({ error: 'Error deleting penumpang' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Penumpang deleted successfully' },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: 'Error deleting penumpang' },
+      { status: 500 },
+    );
   }
 }
