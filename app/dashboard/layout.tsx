@@ -21,11 +21,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       await axios.get('/api/auth/logout');
       router.push('/login');
     } catch (error: unknown) {
-        if (error instanceof Error) {
-            console.log(error.message);
-        } else {
-            console.log('An unknown error occurred');
-        }
+      if (error instanceof Error) {
+        console.log(error.message);
+      } else {
+        console.log('An unknown error occurred');
+      }
     }
   }
 
@@ -60,7 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-5">
           {children}
         </main>
       </div>
