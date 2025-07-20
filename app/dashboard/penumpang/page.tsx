@@ -2,6 +2,8 @@
 import { IconEdit, IconTrash, IconEye, IconPlus, IconDownload, IconSearch } from "@tabler/icons-react";
 import { useState, useEffect, FormEvent } from "react";
 import Papa from "papaparse";
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import PdfDocument from './PdfDocument';
 
 interface Penumpang {
     id: string;
@@ -238,13 +240,15 @@ export default function Penumpang() {
                         <IconDownload className="w-5 h-5 mr-2" />
                         Export All to CSV
                     </button>
-                    <button
-                        onClick={() => alert("Export to PDF feature coming soon!")}
+                    <PDFDownloadLink
+                        document={<PdfDocument data={filteredPenumpang} />}
+                        fileName="penumpang.pdf"
                         className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center"
                     >
-                        <IconDownload className="w-5 h-5 mr-2" />
-                        Export to PDF
-                    </button>
+                        {({ blob, url, loading, error }) =>
+                            loading ? 'Loading document...' : <><IconDownload className="w-5 h-5 mr-2" /> Export to PDF</>
+                        }
+                    </PDFDownloadLink>
                     {selectedRows.length > 0 && (
                         <>
                             <button
