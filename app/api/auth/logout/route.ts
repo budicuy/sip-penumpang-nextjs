@@ -3,19 +3,27 @@ import { NextResponse } from "next/server";
 export async function GET() {
     try {
         const response = NextResponse.json({
-            message: "Logout successful",
+            message: "Logout berhasil",
             success: true,
-        })
-        response.cookies.set("token", "", { 
-            httpOnly: true,
-            expires: new Date(0) 
         });
+
+        // Hapus cookie dengan menyamakan semua atribut penting
+        response.cookies.set("token", "", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/',
+            // Set expires ke masa lalu untuk menghapusnya
+            expires: new Date(0)
+        });
+
         return response;
+
     } catch (error: unknown) {
-        if (error instanceof Error) {
-            return NextResponse.json({ error: error.message }, { status: 500 });
-        }
-        return NextResponse.json({ error: 'Terjadi kesalahan yang tidak diketahui' }, { status: 500 });
+        // Log error asli untuk developer
+        console.error('Logout API Error:', error);
+
+        // Kirim pesan generik ke client
+        return NextResponse.json({ error: 'Terjadi kesalahan pada server.' }, { status: 500 });
     }
-        
 }

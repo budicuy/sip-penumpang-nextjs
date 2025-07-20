@@ -4,6 +4,7 @@ import { IconUser, IconLogin } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import axios, { AxiosError } from 'axios';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -18,24 +19,12 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password }),
-            });
-
-            if (res.ok) {
-                router.push('/dashboard');
-            } else {
-                const data = await res.json();
-                setError(data.error || 'Login gagal');
-                setLoading(false);
-            }
-        } catch (e) {
-            console.error(e);
-            setError('Terjadi kesalahan');
+            await axios.post('/api/auth/login', { email, password });
+            router.push('/dashboard');
+        } catch (error) {
+            const axiosError = error as AxiosError<{ error: string }>;
+            setError(axiosError.response?.data?.error || 'Login gagal');
+        } finally {
             setLoading(false);
         }
     };

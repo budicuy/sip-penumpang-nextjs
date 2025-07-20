@@ -4,6 +4,7 @@ import { IconUserPlus } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import axios, { AxiosError } from 'axios';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -19,24 +20,12 @@ export default function RegisterPage() {
         setLoading(true);
 
         try {
-            const res = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name, email, password }),
-            });
-
-            if (res.ok) {
-                router.push('/login');
-            } else {
-                const data = await res.json();
-                setError(data.error || 'Pendaftaran gagal');
-                setLoading(false);
-            }
-        } catch (e) {
-            console.error(e);
-            setError('Terjadi kesalahan');
+            await axios.post('/api/auth/register', { name, email, password });
+            router.push('/login');
+        } catch (error) {
+            const axiosError = error as AxiosError<{ error: string }>;
+            setError(axiosError.response?.data?.error || 'Pendaftaran gagal');
+        } finally {
             setLoading(false);
         }
     };
