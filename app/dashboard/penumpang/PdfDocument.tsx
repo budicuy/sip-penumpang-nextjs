@@ -50,9 +50,16 @@ const styles = StyleSheet.create({
     col1: {
         width: "5%",
     },
-    col2: { width: "10%" },
+    col2: {
+        width: "10%",
+        textAlign: 'center'  // Align text to the left for better readability
+    },
     col3: { width: "7%" },
-    col4: { width: "5%" },
+    col4: {
+        width: "5%",
+        textAlign: 'center',
+        alignItems: 'center',
+    },
     col5: { width: "10%" },
     col6: { width: "10%" },
     col7: { width: "7%" },

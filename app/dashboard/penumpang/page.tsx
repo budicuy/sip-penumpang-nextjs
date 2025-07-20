@@ -243,6 +243,7 @@ export default function Penumpang() {
                     </button>
                     {isPdfReady && (
                         <PDFDownloadLink
+                            key={Date.now()}
                             document={<PdfDocument data={filteredPenumpang} />}
                             fileName="penumpang.pdf"
                             className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center"
