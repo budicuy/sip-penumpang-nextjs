@@ -218,8 +218,8 @@ export default function Penumpang() {
             </div>
 
             {isModalOpen && (
-                <div className="fixed px-5 inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl">
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full flex items-start justify-center py-10 px-4">
+                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl overflow-y-auto max-h-full">
                         <h2 className="text-2xl font-semibold mb-4">
                             {modalType === "add" && "Tambah Penumpang"}
                             {modalType === "edit" && "Edit Penumpang"}
