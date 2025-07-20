@@ -7,7 +7,7 @@ export async function GET() {
     try {
         const penumpang = await prisma.penumpang.findMany();
         return NextResponse.json(penumpang);
-    } catch (error) {
+    } catch {
         return NextResponse.json({ error: 'Error fetching penumpang' }, { status: 500 });
     }
 }

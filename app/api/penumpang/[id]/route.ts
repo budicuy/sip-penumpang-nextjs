@@ -20,7 +20,7 @@ export async function GET(
     }
 
     return NextResponse.json(penumpang);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Error fetching penumpang' }, { status: 500 });
   }
 }
@@ -64,7 +64,7 @@ export async function PUT(
     });
 
     return NextResponse.json(updatedPenumpang);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Error updating penumpang' }, { status: 500 });
   }
 }
@@ -82,7 +82,7 @@ export async function DELETE(
     });
 
     return NextResponse.json({ message: 'Penumpang deleted successfully' });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Error deleting penumpang' }, { status: 500 });
   }
 }
