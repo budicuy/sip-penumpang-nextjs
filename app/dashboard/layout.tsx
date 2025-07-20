@@ -18,10 +18,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const logout = async () => {
     try {
-        await axios.get('/api/auth/logout');
-        router.push('/login');
+      await axios.get('/api/auth/logout');
+      router.push('/login');
     } catch (error: any) {
-        console.log(error.message);
+      console.log(error.message);
     }
   }
 
@@ -50,8 +50,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
           <button onClick={logout} className="flex items-center space-x-2 text-red-500 hover:text-red-700">
-              <span className="">Logout</span>
-              <IconLogout className="w-6 h-6" />
+            <span className="">Logout</span>
+            <IconLogout className="w-6 h-6" />
           </button>
         </header>
 
