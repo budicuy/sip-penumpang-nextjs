@@ -26,6 +26,8 @@ export default function Penumpang() {
     const [modalType, setModalType] = useState<"add" | "edit" | "view">(
         "add"
     );
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
     useEffect(() => {
         fetchPenumpang();
@@ -60,6 +62,7 @@ export default function Penumpang() {
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setIsSubmitting(true);
         const formData = new FormData(e.currentTarget);
         const rawData = Object.fromEntries(formData.entries());
 
@@ -91,6 +94,8 @@ export default function Penumpang() {
             handleModalClose();
         } catch (error) {
             console.error("Error submitting form:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -103,6 +108,39 @@ export default function Penumpang() {
                 fetchPenumpang();
             } catch (error) {
                 console.error("Error deleting penumpang:", error);
+            }
+        }
+    };
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            const allIds = penumpang.map((p) => p.id);
+            setSelectedRows(allIds);
+        } else {
+            setSelectedRows([]);
+        }
+    };
+
+    const handleSelectRow = (id: string) => {
+        setSelectedRows((prev) =>
+            prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]
+        );
+    };
+
+    const handleDeleteSelected = async () => {
+        if (window.confirm(`Are you sure you want to delete ${selectedRows.length} selected items?`)) {
+            try {
+                await Promise.all(
+                    selectedRows.map((id) =>
+                        fetch(`/api/penumpang/${id}`, {
+                            method: "DELETE",
+                        })
+                    )
+                );
+                fetchPenumpang();
+                setSelectedRows([]);
+            } catch (error) {
+                console.error("Error deleting selected penumpang:", error);
             }
         }
     };
@@ -143,6 +181,15 @@ export default function Penumpang() {
                         <IconDownload className="w-5 h-5 mr-2" />
                         Export to PDF
                     </button>
+                    {selectedRows.length > 0 && (
+                        <button
+                            onClick={handleDeleteSelected}
+                            className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center"
+                        >
+                            <IconTrash className="w-5 h-5 mr-2" />
+                            Delete Selected ({selectedRows.length})
+                        </button>
+                    )}
                 </div>
                 {/* filter pencarian */}
                 <div className="mb-4 flex items-center space-x-2 border border-gray-300 rounded-lg px-3">
@@ -192,7 +239,11 @@ export default function Penumpang() {
                         <thead>
                             <tr className="bg-blue-600 text-white">
                                 <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                                    <input type="checkbox" /> {/* Checkbox for selecting all */}
+                                    <input
+                                        type="checkbox"
+                                        onChange={handleSelectAll}
+                                        checked={selectedRows.length === penumpang.length && penumpang.length > 0}
+                                    />
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
                                     No
@@ -243,10 +294,13 @@ export default function Penumpang() {
                                 penumpang.map((item, index) => (
                                     <tr
                                         key={item.id}
-                                        className="hover:bg-gray-100 border-b border-gray-200"
-                                    >
+                                        className={`hover:bg-gray-100 border-b border-gray-200 ${selectedRows.includes(item.id) ? 'bg-blue-100' : ''}`}>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <input type="checkbox" />
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedRows.includes(item.id)}
+                                                onChange={() => handleSelectRow(item.id)}
+                                            />
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">{index + 1}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">{item.nama}</td>
@@ -494,14 +548,16 @@ export default function Penumpang() {
                                         type="button"
                                         onClick={handleModalClose}
                                         className="bg-gray-500 text-white px-4 py-2 rounded mr-2"
+                                        disabled={isSubmitting}
                                     >
                                         Batal
                                     </button>
                                     <button
                                         type="submit"
                                         className="bg-blue-600 text-white px-4 py-2 rounded"
+                                        disabled={isSubmitting}
                                     >
-                                        Simpan
+                                        {isSubmitting ? "Menyimpan..." : "Simpan"}
                                     </button>
                                 </div>
                             </form>
