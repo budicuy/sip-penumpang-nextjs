@@ -26,6 +26,7 @@ const generatePDFWithJsPDF = (data: Penumpang[]) => {
         doc.text(dateStr, 280, 30, { align: 'right' });
     };
 
+    // Tambahkan nomor halaman di semua halaman
     const addFooter = () => {
         const pageCount = doc.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
@@ -104,7 +105,7 @@ const generatePDFWithJsPDF = (data: Penumpang[]) => {
         }
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 25;
+    const finalY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 25;
     doc.setFontSize(12);
 
     // Signature hanya di halaman terakhir
@@ -196,8 +197,25 @@ const TableRow = memo(({ item, index, currentPage, itemsPerPage, isSelected, onS
         </td>
     </tr>
 ));
+TableRow.displayName = 'TableRow';
 
-const PenumpangTable = memo(({ paginatedData, isLoading, selectedRows, allChecked, currentPage, itemsPerPage, onSelectAll, onSelectRow, onEdit, onDelete, onView }: {
+const PenumpangTable = memo(({
+    paginatedData,
+    isLoading,
+    selectedRows,
+    allChecked,
+    currentPage,
+    itemsPerPage,
+    onSelectAll,
+    onSelectRow,
+    onEdit,
+    onDelete,
+    onView,
+    searchTerm,
+    filterStartDate,
+    filterEndDate,
+    onResetFilters
+}: {
     paginatedData: Penumpang[];
     isLoading: boolean;
     selectedRows: Set<string>;
@@ -209,6 +227,10 @@ const PenumpangTable = memo(({ paginatedData, isLoading, selectedRows, allChecke
     onEdit: (item: Penumpang) => void;
     onDelete: (id: string) => void;
     onView: (item: Penumpang) => void;
+    searchTerm: string;
+    filterStartDate: string;
+    filterEndDate: string;
+    onResetFilters: () => void;
 }) => (
     <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -237,9 +259,34 @@ const PenumpangTable = memo(({ paginatedData, isLoading, selectedRows, allChecke
             </thead>
             <tbody>
                 {isLoading ? (
-                    <tr><td colSpan={12} className="text-center py-4">Loading...</td></tr>
+                    <tr>
+                        <td colSpan={12} className="text-center py-8">
+                            <div className="flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
+                                Loading...
+                            </div>
+                        </td>
+                    </tr>
                 ) : paginatedData.length === 0 ? (
-                    <tr><td colSpan={12} className="text-center py-4">Tidak ada data</td></tr>
+                    <tr>
+                        <td colSpan={12} className="text-center py-8">
+                            <div className="text-gray-500">
+                                {searchTerm || filterStartDate || filterEndDate ? (
+                                    <div>
+                                        <p className="mb-2">Tidak ada data yang sesuai dengan pencarian</p>
+                                        <button
+                                            onClick={onResetFilters}
+                                            className="text-blue-600 hover:text-blue-800 underline text-sm"
+                                        >
+                                            Reset filter pencarian
+                                        </button>
+                                    </div>
+                                ) : (
+                                    "Tidak ada data penumpang"
+                                )}
+                            </div>
+                        </td>
+                    </tr>
                 ) : (
                     paginatedData.map((item, index) => (
                         <TableRow
@@ -260,6 +307,7 @@ const PenumpangTable = memo(({ paginatedData, isLoading, selectedRows, allChecke
         </table>
     </div>
 ));
+PenumpangTable.displayName = 'PenumpangTable';
 
 const PenumpangModal = memo(({ isModalOpen, modalType, isSubmitting, selectedPenumpang, onClose, onSubmit }: {
     isModalOpen: boolean;
@@ -356,6 +404,7 @@ const PenumpangModal = memo(({ isModalOpen, modalType, isSubmitting, selectedPen
         </div>
     );
 });
+PenumpangModal.displayName = 'PenumpangModal';
 
 const ConfirmDialog = memo(({ isOpen, title, message, onConfirm, onCancel, isProcessing }: {
     isOpen: boolean;
@@ -381,6 +430,7 @@ const ConfirmDialog = memo(({ isOpen, title, message, onConfirm, onCancel, isPro
         </div>
     );
 });
+ConfirmDialog.displayName = 'ConfirmDialog';
 
 export default function Penumpang() {
     const [penumpang, setPenumpang] = useState<Penumpang[]>([]);
@@ -418,17 +468,124 @@ export default function Penumpang() {
         });
 
         try {
+            // Add timeout to abort controller
+            const timeoutId = setTimeout(() => {
+                abortControllerRef.current?.abort();
+            }, 10000); // 10 second timeout
+
             const response = await fetch(`/api/penumpang?${params.toString()}`, {
-                signal: abortControllerRef.current.signal
+                signal: abortControllerRef.current.signal,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
             });
-            if (!response.ok) throw new Error('Failed to fetch data');
-            const { data, total } = await response.json();
-            setPenumpang(data);
-            setTotalData(total);
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                let errorMessage = 'Gagal memuat data';
+
+                try {
+                    const errorData = await response.json();
+
+                    // Handle specific error codes from API
+                    switch (errorData.code) {
+                        case 'TIMEOUT':
+                            errorMessage = 'Request timeout. Coba kurangi filter pencarian atau coba lagi.';
+                            break;
+                        case 'QUERY_ERROR':
+                            errorMessage = 'Filter tidak valid. Periksa format tanggal atau kata kunci pencarian.';
+                            break;
+                        case 'DB_ERROR':
+                            errorMessage = 'Masalah koneksi database. Coba lagi dalam beberapa saat.';
+                            break;
+                        case 'SYNTAX_ERROR':
+                            errorMessage = 'Format request tidak valid. Refresh halaman dan coba lagi.';
+                            break;
+                        case 'INTERNAL_ERROR':
+                            errorMessage = 'Terjadi kesalahan server. Hubungi administrator jika masalah berlanjut.';
+                            break;
+                        default:
+                            errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                } catch {
+                    // If error response is not JSON, use status-based messages
+                    switch (response.status) {
+                        case 400:
+                            errorMessage = 'Request tidak valid. Periksa filter pencarian Anda.';
+                            break;
+                        case 404:
+                            errorMessage = 'Endpoint API tidak ditemukan. Hubungi administrator.';
+                            break;
+                        case 500:
+                            errorMessage = 'Terjadi kesalahan server internal.';
+                            break;
+                        case 503:
+                            errorMessage = 'Layanan tidak tersedia. Coba lagi nanti.';
+                            break;
+                        case 504:
+                            errorMessage = 'Request timeout. Coba kurangi filter atau coba lagi.';
+                            break;
+                        default:
+                            errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                }
+
+                throw new Error(errorMessage);
+            }
+
+            const result = await response.json();
+
+            // Validate response structure
+            if (result && typeof result === 'object' && 'data' in result && 'total' in result) {
+                const { data = [], total = 0, meta = {} } = result;
+
+                // Additional validation for data array
+                if (Array.isArray(data)) {
+                    setPenumpang(data);
+                    setTotalData(typeof total === 'number' ? total : 0);
+
+                    // Log success for debugging
+                    console.log('Data loaded successfully:', {
+                        count: data.length,
+                        total,
+                        page: currentPage,
+                        search: debouncedSearchTerm,
+                        meta
+                    });
+                } else {
+                    console.error('Invalid data format - data is not an array:', data);
+                    setPenumpang([]);
+                    setTotalData(0);
+                    setError('Format data tidak valid dari server.');
+                }
+            } else {
+                console.error('Invalid response format:', result);
+                setPenumpang([]);
+                setTotalData(0);
+                setError('Format response tidak valid dari server.');
+            }
+
         } catch (err: unknown) {
             if (err instanceof Error && err.name !== 'AbortError') {
-                setError("Gagal memuat data penumpang");
-                console.error("Error fetching penumpang:", err);
+                console.error("Fetch error details:", {
+                    message: err.message,
+                    name: err.name,
+                    stack: err.stack,
+                    currentPage,
+                    itemsPerPage,
+                    searchTerm: debouncedSearchTerm,
+                    startDate: filterStartDate,
+                    endDate: filterEndDate,
+                    timestamp: new Date().toISOString()
+                });
+
+                // Set error message (already processed above)
+                setError(err.message);
+
+                // Set empty data on error
+                setPenumpang([]);
+                setTotalData(0);
             }
         } finally {
             setIsLoading(false);
@@ -444,7 +601,9 @@ export default function Penumpang() {
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            setDebouncedSearchTerm(searchTerm);
+            // Sanitize search term
+            const sanitizedSearchTerm = searchTerm.trim().replace(/[<>]/g, '');
+            setDebouncedSearchTerm(sanitizedSearchTerm);
             setCurrentPage(1);
         }, SEARCH_DEBOUNCE_MS);
         return () => clearTimeout(timer);
@@ -493,11 +652,26 @@ export default function Penumpang() {
 
         const formData = new FormData(e.currentTarget);
         const rawData = Object.fromEntries(formData.entries());
+
+        // Client-side validation
+        const requiredFields = ['nama', 'usia', 'jenisKelamin', 'tujuan', 'tanggal', 'nopol', 'jenisKendaraan', 'golongan', 'kapal'];
+        const missingFields = requiredFields.filter(field => !rawData[field]);
+
+        if (missingFields.length > 0) {
+            setError(`Field wajib tidak boleh kosong: ${missingFields.join(', ')}`);
+            setIsSubmitting(false);
+            return;
+        }
+
         const data = {
             ...rawData,
             usia: Number(rawData.usia),
             tanggal: new Date(rawData.tanggal as string).toISOString(),
-            nopol: (rawData.nopol as string).toUpperCase().replace(/\s+/g, ' ')
+            nopol: (rawData.nopol as string).toUpperCase().replace(/\s+/g, ' ').trim(),
+            nama: (rawData.nama as string).trim(),
+            jenisKendaraan: (rawData.jenisKendaraan as string).trim(),
+            kapal: (rawData.kapal as string).trim(),
+            tujuan: (rawData.tujuan as string).trim(),
         };
 
         try {
@@ -506,17 +680,79 @@ export default function Penumpang() {
 
             const response = await fetch(url, {
                 method,
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
                 body: JSON.stringify(data)
             });
 
-            if (!response.ok) throw new Error('Failed to save data');
+            if (!response.ok) {
+                let errorMessage = `Gagal ${modalType === "add" ? "menambahkan" : "memperbarui"} data`;
+
+                try {
+                    const errorData = await response.json();
+
+                    // Handle specific error codes from API
+                    switch (errorData.code) {
+                        case 'VALIDATION_ERROR':
+                            errorMessage = `Validasi gagal: ${errorData.error}`;
+                            break;
+                        case 'DUPLICATE_ERROR':
+                            errorMessage = 'Data dengan nomor polisi atau identitas yang sama sudah ada.';
+                            break;
+                        case 'CONSTRAINT_ERROR':
+                            errorMessage = 'Data tidak memenuhi persyaratan database.';
+                            break;
+                        case 'CREATE_ERROR':
+                            errorMessage = 'Gagal menyimpan data ke database.';
+                            break;
+                        default:
+                            errorMessage = errorData.error || errorMessage;
+                    }
+                } catch {
+                    // If error response is not JSON, use status-based messages
+                    switch (response.status) {
+                        case 400:
+                            errorMessage = 'Data yang dikirim tidak valid. Periksa input Anda.';
+                            break;
+                        case 409:
+                            errorMessage = 'Data sudah ada. Periksa nomor polisi atau data identitas lainnya.';
+                            break;
+                        case 422:
+                            errorMessage = 'Format data tidak sesuai. Periksa tanggal dan angka.';
+                            break;
+                        case 500:
+                            errorMessage = 'Terjadi kesalahan server. Coba lagi nanti.';
+                            break;
+                        default:
+                            errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                }
+
+                throw new Error(errorMessage);
+            }
+
+            const result = await response.json();
+            console.log('Successfully saved:', result);
 
             await fetchPenumpang();
             handleModalClose();
             setSuccessMessage(`Data berhasil ${modalType === "add" ? "ditambahkan" : "diperbarui"}`);
-        } catch {
-            setError(`Gagal ${modalType === "add" ? "menambahkan" : "memperbarui"} data`);
+
+        } catch (err: unknown) {
+            console.error('Submit error:', {
+                error: err,
+                data,
+                modalType,
+                selectedId: selectedPenumpang?.id
+            });
+
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError(`Gagal ${modalType === "add" ? "menambahkan" : "memperbarui"} data`);
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -589,23 +825,39 @@ export default function Penumpang() {
             if (selectedCount > 0) {
                 dataToExport = penumpang.filter(p => selectedRows.has(p.id));
             } else {
-                const response = await fetch(`/api/penumpang?limit=${totalData}`);
-                const { data } = await response.json();
-                dataToExport = data;
+                const response = await fetch(`/api/penumpang?limit=${Math.max(1000, totalData)}`);
+                if (!response.ok) {
+                    let errorMessage = 'Gagal mengambil data untuk export';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorMessage;
+                    } catch {
+                        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+                const result = await response.json();
+                dataToExport = result.data || [];
+            }
+
+            if (dataToExport.length === 0) {
+                setError('Tidak ada data untuk di-export');
+                return;
             }
 
             const csvData = dataToExport.map((p, index) => ({
                 No: index + 1,
-                Nama: p.nama,
-                Usia: p.usia,
+                Nama: p.nama || '-',
+                Usia: p.usia || '-',
                 'Jenis Kelamin': p.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan',
-                Tujuan: p.tujuan,
-                Tanggal: new Date(p.tanggal).toLocaleDateString('id-ID'),
-                'No. Polisi': p.nopol,
-                'Jenis Kendaraan': p.jenisKendaraan,
-                Golongan: p.golongan,
-                Kapal: p.kapal
+                Tujuan: p.tujuan || '-',
+                Tanggal: p.tanggal ? new Date(p.tanggal).toLocaleDateString('id-ID') : '-',
+                'No. Polisi': p.nopol || '-',
+                'Jenis Kendaraan': p.jenisKendaraan || '-',
+                Golongan: p.golongan || '-',
+                Kapal: p.kapal || '-'
             }));
+
             const csv = Papa.unparse(csvData);
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
@@ -617,17 +869,26 @@ export default function Penumpang() {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            setSuccessMessage("Data berhasil diexport ke CSV");
-        } catch {
-            setError("Gagal export data ke CSV");
+
+            setSuccessMessage(`${dataToExport.length} data berhasil di-export ke CSV`);
+
+        } catch (err: unknown) {
+            console.error('Export CSV error:', err);
+            if (err instanceof Error) {
+                setError(`Export gagal: ${err.message}`);
+            } else {
+                setError("Gagal export data ke CSV");
+            }
         }
     }, [selectedRows, selectedCount, penumpang, totalData]);
 
     const handleResetFilters = useCallback(() => {
         setSearchTerm("");
+        setDebouncedSearchTerm("");
         setFilterStartDate("");
         setFilterEndDate("");
         setCurrentPage(1);
+        setError(null); // Clear any existing errors
     }, []);
 
     const allChecked = penumpang.length > 0 && penumpang.every(item => selectedRows.has(item.id));
@@ -639,7 +900,20 @@ export default function Penumpang() {
             <h1 className="text-2xl lg:text-4xl font-bold text-black mb-5">Manifest Data Penumpang</h1>
 
             {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex items-center justify-between">
+                    <div className="flex items-center">
+                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path>
+                        </svg>
+                        <span>{error}</span>
+                    </div>
+                    <button
+                        onClick={fetchPenumpang}
+                        className="ml-4 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
+                    >
+                        Coba Lagi
+                    </button>
+                </div>
             )}
 
             {successMessage && (
@@ -679,9 +953,30 @@ export default function Penumpang() {
                     )}
                 </div>
 
-                <div className="mb-4 flex items-center space-x-2 border border-gray-300 rounded-lg px-3">
+                <div className="mb-4 flex items-center space-x-2 border border-gray-300 rounded-lg px-3 relative">
                     <IconSearch className="w-5 h-5 text-gray-500" />
-                    <input type="text" placeholder="Cari nama, tujuan, nopol, atau kapal..." className="w-full px-3 py-2 rounded focus:outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <input
+                        type="text"
+                        placeholder="Cari nama, tujuan, nopol, atau kapal..."
+                        className="w-full px-3 py-2 rounded focus:outline-none"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        maxLength={100}
+                    />
+                    {isLoading && searchTerm && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        </div>
+                    )}
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            title="Hapus pencarian"
+                        >
+                            <IconX className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
 
                 <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -706,11 +1001,20 @@ export default function Penumpang() {
 
                 <div className="mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div className="text-sm text-gray-600">
-                        Menampilkan {penumpang.length} dari {totalData} data
-                        {selectedCount > 0 && (
-                            <span className="ml-2 text-blue-600 font-medium">
-                                • {selectedCount} dipilih
-                            </span>
+                        <div>
+                            Menampilkan {penumpang.length} dari {totalData} data
+                            {selectedCount > 0 && (
+                                <span className="ml-2 text-blue-600 font-medium">
+                                    • {selectedCount} dipilih
+                                </span>
+                            )}
+                        </div>
+                        {(debouncedSearchTerm || filterStartDate || filterEndDate) && (
+                            <div className="text-xs text-gray-500 mt-1">
+                                {debouncedSearchTerm && `Pencarian: "${debouncedSearchTerm}"`}
+                                {filterStartDate && ` | Dari: ${filterStartDate}`}
+                                {filterEndDate && ` | Sampai: ${filterEndDate}`}
+                            </div>
                         )}
                         <div className="text-xs text-gray-500 mt-1">
                             Tip: Klik baris untuk memilih/batal memilih data
@@ -741,6 +1045,10 @@ export default function Penumpang() {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onView={handleView}
+                    searchTerm={debouncedSearchTerm}
+                    filterStartDate={filterStartDate}
+                    filterEndDate={filterEndDate}
+                    onResetFilters={handleResetFilters}
                 />
             </div>
 
