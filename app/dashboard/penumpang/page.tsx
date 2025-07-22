@@ -3,19 +3,130 @@ import { IconEdit, IconTrash, IconEye, IconPlus, IconDownload, IconSearch, IconX
 import { useState, useEffect, FormEvent, useCallback, useMemo, memo, useRef } from "react";
 import Papa from "papaparse";
 import dynamic from "next/dynamic";
-import PdfDocument from './PdfDocument';
 
-const PDFDownloadLink = dynamic(
-    () => import('@react-pdf/renderer').then(mod => mod.PDFDownloadLink),
-    {
-        ssr: false,
-        loading: () => (
-            <button disabled className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center justify-center opacity-50 cursor-not-allowed">
-                <IconDownload className="w-5 h-5 mr-2" />Preparing PDF...
-            </button>
-        )
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+const generatePDFWithJsPDF = (data: Penumpang[]) => {
+    const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    const addHeader = () => {
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text('MANIFEST DATA PENUMPANG', 148, 20, { align: 'center' });
+
+        const now = new Date();
+        const dateStr = `Tanggal: ${now.toLocaleDateString('id-ID')} ${now.toLocaleTimeString('id-ID')}`;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(dateStr, 280, 30, { align: 'right' });
+    };
+
+    const addFooter = () => {
+        const pageCount = doc.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Halaman ${i} dari ${pageCount}`, 280, 200, { align: 'right' });
+        }
+    };
+
+    // Header halaman pertama
+    addHeader();
+
+    const tableData = data.map((item, index) => [
+        index + 1,
+        item.nama || '-',
+        item.usia || '-',
+        item.jenisKelamin === 'L' ? 'L' : 'P',
+        item.tujuan || '-',
+        item.tanggal ? new Date(item.tanggal).toLocaleDateString('id-ID') : '-',
+        item.nopol || '-',
+        item.jenisKendaraan || '-',
+        item.golongan || '-',
+        item.kapal || '-'
+    ]);
+
+    // Perlebar kolom untuk memanfaatkan ruang landscape
+    const totalColumnWidth = 15 + 45 + 15 + 12 + 30 + 25 + 28 + 45 + 15 + 45; // = 275mm
+    const pageWidth = doc.internal.pageSize.getWidth(); // 297mm
+    const leftMargin = (pageWidth - totalColumnWidth) / 2; // Centering
+
+    autoTable(doc, {
+        head: [['No', 'Nama', 'Usia', 'JK', 'Tujuan', 'Tanggal', 'Nopol', 'Jenis Kendaraan', 'Gol', 'Kapal']],
+        body: tableData,
+        startY: 40,
+        showHead: 'everyPage', // Header di setiap halaman
+        styles: {
+            fontSize: 8, // Slightly bigger font
+            cellPadding: 2,
+            overflow: 'linebreak',
+            cellWidth: 'wrap',
+            halign: 'center'
+        },
+        headStyles: {
+            fillColor: [22, 160, 133],
+            textColor: 255,
+            fontStyle: 'bold',
+            halign: 'center',
+            fontSize: 8
+        },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        columnStyles: {
+            0: { cellWidth: 15, halign: 'center' },    // No - lebih besar
+            1: { cellWidth: 45, halign: 'center' },    // Nama - lebih besar
+            2: { cellWidth: 15, halign: 'center' },    // Usia 
+            3: { cellWidth: 12, halign: 'center' },    // JK
+            4: { cellWidth: 30, halign: 'center' },    // Tujuan - lebih besar
+            5: { cellWidth: 25, halign: 'center' },    // Tanggal
+            6: { cellWidth: 28, halign: 'center' },    // Nopol - lebih besar
+            7: { cellWidth: 45, halign: 'center' },    // Jenis Kendaraan - lebih besar
+            8: { cellWidth: 15, halign: 'center' },    // Golongan
+            9: { cellWidth: 45, halign: 'center' }     // Kapal - lebih besar
+        },
+        margin: {
+            top: 40,
+            left: Math.max(10, leftMargin),
+            right: Math.max(10, leftMargin),
+            bottom: 30 // Space untuk footer
+        },
+        theme: 'striped',
+        didDrawPage: (data) => {
+            // Tambahkan header di setiap halaman baru
+            if (data.pageNumber > 1) {
+                addHeader();
+            }
+        }
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY + 25;
+    doc.setFontSize(12);
+
+    // Signature hanya di halaman terakhir
+    const currentPage = doc.getCurrentPageInfo().pageNumber;
+    const totalPages = doc.getNumberOfPages();
+
+    if (currentPage === totalPages) {
+        const pageWidthForSignature = doc.internal.pageSize.getWidth();
+        const leftSignature = pageWidthForSignature * 0.25;
+        const rightSignature = pageWidthForSignature * 0.75;
+
+        doc.text('Petugas', leftSignature, finalY, { align: 'center' });
+        doc.text('Nahkoda', rightSignature, finalY, { align: 'center' });
+        doc.text('(...............................)', leftSignature, finalY + 25, { align: 'center' });
+        doc.text('(...............................)', rightSignature, finalY + 25, { align: 'center' });
     }
-);
+
+    // Tambahkan nomor halaman di semua halaman
+    addFooter();
+
+    doc.save(`penumpang_${new Date().toISOString().split('T')[0]}.pdf`);
+};
 
 interface Penumpang {
     id: string;
@@ -31,23 +142,12 @@ interface Penumpang {
 }
 
 const SEARCH_DEBOUNCE_MS = 500;
-
 const TUJUAN_OPTIONS = ["Pel Tarjun", "Pel Stagen"];
 const GOLONGAN_OPTIONS = ["I", "II", "III", "IVa", "IVb", "V", "VI", "VII", "VIII", "IX"];
 const KAPAL_OPTIONS = ["KMF Stagen", "KMF Tarjun", "KMF Benua Raya"];
 const ITEMS_PER_PAGE_OPTIONS = [200, 300, 500];
 
-const TableRow = memo(({
-    item,
-    index,
-    currentPage,
-    itemsPerPage,
-    isSelected,
-    onSelect,
-    onEdit,
-    onDelete,
-    onView
-}: {
+const TableRow = memo(({ item, index, currentPage, itemsPerPage, isSelected, onSelect, onEdit, onDelete, onView }: {
     item: Penumpang;
     index: number;
     currentPage: number;
@@ -58,13 +158,19 @@ const TableRow = memo(({
     onDelete: (id: string) => void;
     onView: (item: Penumpang) => void;
 }) => (
-    <tr className={`hover:bg-gray-100 border-b border-gray-200 ${isSelected ? 'bg-blue-100' : ''}`}>
-        <td className="px-6 py-4 whitespace-nowrap text-center">
+    <tr
+        className={`border-b border-gray-200 cursor-pointer transition-colors ${isSelected
+            ? 'bg-blue-100 hover:bg-blue-200'
+            : 'hover:bg-gray-50'
+            }`}
+        onClick={() => onSelect(item.id)}
+    >
+        <td className="px-6 py-4 whitespace-nowrap text-center" onClick={(e) => e.stopPropagation()}>
             <input
                 type="checkbox"
                 checked={isSelected}
                 onChange={() => onSelect(item.id)}
-                aria-label={`Select ${item.nama}`}
+                className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
             />
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-center">{(currentPage - 1) * itemsPerPage + index + 1}</td>
@@ -77,46 +183,21 @@ const TableRow = memo(({
         <td className="px-6 py-4 whitespace-nowrap">{item.jenisKendaraan}</td>
         <td className="px-6 py-4 whitespace-nowrap text-center">{item.golongan}</td>
         <td className="px-6 py-4 whitespace-nowrap">{item.kapal}</td>
-        <td className="px-6 py-4 whitespace-nowrap flex items-center justify-center space-x-1">
-            <button
-                onClick={() => onEdit(item)}
-                className="text-blue-600 hover:text-blue-800 p-2 bg-blue-100 rounded"
-                aria-label={`Edit ${item.nama}`}
-            >
+        <td className="px-6 py-4 whitespace-nowrap flex items-center justify-center space-x-1" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => onEdit(item)} className="text-blue-600 hover:text-blue-800 p-2 bg-blue-100 rounded transition-colors">
                 <IconEdit className="w-4 h-4" />
             </button>
-            <button
-                onClick={() => onDelete(item.id)}
-                className="text-red-600 hover:text-red-800 p-2 bg-red-100 rounded"
-                aria-label={`Delete ${item.nama}`}
-            >
+            <button onClick={() => onDelete(item.id)} className="text-red-600 hover:text-red-800 p-2 bg-red-100 rounded transition-colors">
                 <IconTrash className="w-4 h-4" />
             </button>
-            <button
-                onClick={() => onView(item)}
-                className="text-green-600 hover:text-green-800 p-2 bg-green-100 rounded"
-                aria-label={`View ${item.nama}`}
-            >
+            <button onClick={() => onView(item)} className="text-green-600 hover:text-green-800 p-2 bg-green-100 rounded transition-colors">
                 <IconEye className="w-4 h-4" />
             </button>
         </td>
     </tr>
 ));
-TableRow.displayName = 'TableRow';
 
-const PenumpangTable = memo(({
-    paginatedData,
-    isLoading,
-    selectedRows,
-    allChecked,
-    currentPage,
-    itemsPerPage,
-    onSelectAll,
-    onSelectRow,
-    onEdit,
-    onDelete,
-    onView
-}: {
+const PenumpangTable = memo(({ paginatedData, isLoading, selectedRows, allChecked, currentPage, itemsPerPage, onSelectAll, onSelectRow, onEdit, onDelete, onView }: {
     paginatedData: Penumpang[];
     isLoading: boolean;
     selectedRows: Set<string>;
@@ -138,7 +219,7 @@ const PenumpangTable = memo(({
                             type="checkbox"
                             onChange={onSelectAll}
                             checked={allChecked}
-                            aria-label="Select all rows"
+                            className="w-5 h-5 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                         />
                     </th>
                     <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider">No</th>
@@ -179,16 +260,8 @@ const PenumpangTable = memo(({
         </table>
     </div>
 ));
-PenumpangTable.displayName = 'PenumpangTable';
 
-const PenumpangModal = memo(({
-    isModalOpen,
-    modalType,
-    isSubmitting,
-    selectedPenumpang,
-    onClose,
-    onSubmit
-}: {
+const PenumpangModal = memo(({ isModalOpen, modalType, isSubmitting, selectedPenumpang, onClose, onSubmit }: {
     isModalOpen: boolean;
     modalType: "add" | "edit" | "view";
     isSubmitting: boolean;
@@ -196,14 +269,6 @@ const PenumpangModal = memo(({
     onClose: () => void;
     onSubmit: (e: FormEvent<HTMLFormElement>) => void;
 }) => {
-    const formRef = useRef<HTMLFormElement>(null);
-
-    useEffect(() => {
-        if (isModalOpen && modalType !== "view") {
-            formRef.current?.nama.focus();
-        }
-    }, [isModalOpen, modalType]);
-
     if (!isModalOpen) return null;
 
     return (
@@ -215,11 +280,7 @@ const PenumpangModal = memo(({
                         {modalType === "edit" && "Edit Penumpang"}
                         {modalType === "view" && "Detail Penumpang"}
                     </h2>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-500 hover:text-gray-700"
-                        aria-label="Close modal"
-                    >
+                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
                         <IconX className="w-6 h-6" />
                     </button>
                 </div>
@@ -237,133 +298,55 @@ const PenumpangModal = memo(({
                         <button onClick={onClose} className="mt-4 bg-gray-500 text-white px-4 py-2 rounded">Tutup</button>
                     </div>
                 ) : (
-                    <form ref={formRef} onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="mb-4">
                             <label htmlFor="nama" className="block text-gray-700 mb-1">Nama</label>
-                            <input
-                                type="text"
-                                id="nama"
-                                name="nama"
-                                defaultValue={selectedPenumpang?.nama}
-                                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                                required
-                                maxLength={100}
-                            />
+                            <input type="text" id="nama" name="nama" defaultValue={selectedPenumpang?.nama} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" required maxLength={100} />
                         </div>
                         <div className="mb-4">
                             <label htmlFor="usia" className="block text-gray-700 mb-1">Usia</label>
-                            <input
-                                type="number"
-                                id="usia"
-                                name="usia"
-                                defaultValue={selectedPenumpang?.usia}
-                                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                                required
-                                min="1"
-                                max="150"
-                            />
+                            <input type="number" id="usia" name="usia" defaultValue={selectedPenumpang?.usia} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" required min="1" max="150" />
                         </div>
                         <div className="mb-4">
                             <label htmlFor="jenisKelamin" className="block text-gray-700 mb-1">Jenis Kelamin</label>
-                            <select
-                                id="jenisKelamin"
-                                name="jenisKelamin"
-                                defaultValue={selectedPenumpang?.jenisKelamin || 'L'}
-                                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                                required
-                            >
+                            <select id="jenisKelamin" name="jenisKelamin" defaultValue={selectedPenumpang?.jenisKelamin || 'L'} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" required>
                                 <option value="L">Laki-laki</option>
                                 <option value="P">Perempuan</option>
                             </select>
                         </div>
                         <div className="mb-4">
                             <label htmlFor="tujuan" className="block text-gray-700 mb-1">Tujuan</label>
-                            <select
-                                id="tujuan"
-                                name="tujuan"
-                                defaultValue={selectedPenumpang?.tujuan || TUJUAN_OPTIONS[0]}
-                                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                                required
-                            >
+                            <select id="tujuan" name="tujuan" defaultValue={selectedPenumpang?.tujuan || TUJUAN_OPTIONS[0]} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" required>
                                 {TUJUAN_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
                         </div>
                         <div className="mb-4">
                             <label htmlFor="tanggal" className="block text-gray-700 mb-1">Tanggal</label>
-                            <input
-                                type="date"
-                                id="tanggal"
-                                name="tanggal"
-                                defaultValue={selectedPenumpang?.tanggal ? new Date(selectedPenumpang.tanggal).toISOString().split("T")[0] : ""}
-                                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                                required
-                                max={new Date().toISOString().split("T")[0]}
-                            />
+                            <input type="date" id="tanggal" name="tanggal" defaultValue={selectedPenumpang?.tanggal ? new Date(selectedPenumpang.tanggal).toISOString().split("T")[0] : ""} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" required max={new Date().toISOString().split("T")[0]} />
                         </div>
                         <div className="mb-4">
                             <label htmlFor="nopol" className="block text-gray-700 mb-1">No. Polisi</label>
-                            <input
-                                type="text"
-                                id="nopol"
-                                name="nopol"
-                                defaultValue={selectedPenumpang?.nopol}
-                                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                                required
-                                title="Format: DA 1234 AB"
-                                maxLength={12}
-                                style={{ textTransform: 'uppercase' }}
-                            />
+                            <input type="text" id="nopol" name="nopol" defaultValue={selectedPenumpang?.nopol} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" required maxLength={12} style={{ textTransform: 'uppercase' }} />
                         </div>
                         <div className="mb-4">
                             <label htmlFor="jenisKendaraan" className="block text-gray-700 mb-1">Jenis Kendaraan</label>
-                            <input
-                                type="text"
-                                id="jenisKendaraan"
-                                name="jenisKendaraan"
-                                defaultValue={selectedPenumpang?.jenisKendaraan}
-                                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                                required
-                                maxLength={50}
-                            />
+                            <input type="text" id="jenisKendaraan" name="jenisKendaraan" defaultValue={selectedPenumpang?.jenisKendaraan} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" required maxLength={50} />
                         </div>
                         <div className="mb-4">
                             <label htmlFor="golongan" className="block text-gray-700 mb-1">Golongan</label>
-                            <select
-                                id="golongan"
-                                name="golongan"
-                                defaultValue={selectedPenumpang?.golongan || GOLONGAN_OPTIONS[0]}
-                                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                                required
-                            >
+                            <select id="golongan" name="golongan" defaultValue={selectedPenumpang?.golongan || GOLONGAN_OPTIONS[0]} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" required>
                                 {GOLONGAN_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
                         </div>
                         <div className="mb-4">
                             <label htmlFor="kapal" className="block text-gray-700 mb-1">Kapal</label>
-                            <select
-                                id="kapal"
-                                name="kapal"
-                                defaultValue={selectedPenumpang?.kapal || KAPAL_OPTIONS[0]}
-                                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                                required
-                            >
+                            <select id="kapal" name="kapal" defaultValue={selectedPenumpang?.kapal || KAPAL_OPTIONS[0]} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" required>
                                 {KAPAL_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
                         </div>
                         <div className="md:col-span-2 flex justify-end space-x-2">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                                disabled={isSubmitting}
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-                                disabled={isSubmitting}
-                            >
+                            <button type="button" onClick={onClose} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600" disabled={isSubmitting}>Batal</button>
+                            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50" disabled={isSubmitting}>
                                 {isSubmitting ? "Menyimpan..." : "Simpan"}
                             </button>
                         </div>
@@ -374,8 +357,6 @@ const PenumpangModal = memo(({
     );
 });
 
-PenumpangModal.displayName = 'PenumpangModal';
-
 const ConfirmDialog = memo(({ isOpen, title, message, onConfirm, onCancel, isProcessing }: {
     isOpen: boolean;
     title: string;
@@ -385,25 +366,14 @@ const ConfirmDialog = memo(({ isOpen, title, message, onConfirm, onCancel, isPro
     isProcessing: boolean;
 }) => {
     if (!isOpen) return null;
-
     return (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-xl max-w-md">
                 <h3 className="text-lg font-semibold mb-2">{title}</h3>
                 <p className="text-gray-600 mb-4">{message}</p>
                 <div className="flex justify-end space-x-2">
-                    <button
-                        onClick={onCancel}
-                        className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                        disabled={isProcessing}
-                    >
-                        Batal
-                    </button>
-                    <button
-                        onClick={onConfirm}
-                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
-                        disabled={isProcessing}
-                    >
+                    <button onClick={onCancel} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" disabled={isProcessing}>Batal</button>
+                    <button onClick={onConfirm} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50" disabled={isProcessing}>
                         {isProcessing ? 'Memproses...' : 'Hapus'}
                     </button>
                 </div>
@@ -411,7 +381,6 @@ const ConfirmDialog = memo(({ isOpen, title, message, onConfirm, onCancel, isPro
         </div>
     );
 });
-ConfirmDialog.displayName = 'ConfirmDialog';
 
 export default function Penumpang() {
     const [penumpang, setPenumpang] = useState<Penumpang[]>([]);
@@ -662,7 +631,6 @@ export default function Penumpang() {
     }, []);
 
     const allChecked = penumpang.length > 0 && penumpang.every(item => selectedRows.has(item.id));
-
     const handleEdit = useCallback((item: Penumpang) => handleModalOpen("edit", item), [handleModalOpen]);
     const handleView = useCallback((item: Penumpang) => handleModalOpen("view", item), [handleModalOpen]);
 
@@ -671,15 +639,11 @@ export default function Penumpang() {
             <h1 className="text-2xl lg:text-4xl font-bold text-black mb-5">Manifest Data Penumpang</h1>
 
             {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                    {error}
-                </div>
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>
             )}
 
             {successMessage && (
-                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                    {successMessage}
-                </div>
+                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{successMessage}</div>
             )}
 
             <div className="bg-white p-6 rounded-lg shadow mb-6">
@@ -688,49 +652,28 @@ export default function Penumpang() {
                 </h2>
 
                 <div className="mb-4 grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-                    <button
-                        onClick={() => handleModalOpen("add")}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center justify-center hover:bg-blue-700"
-                    >
+                    <button onClick={() => handleModalOpen("add")} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center justify-center hover:bg-blue-700">
                         <IconPlus className="w-5 h-5 mr-2" />Tambah Data
                     </button>
 
-                    <button
-                        onClick={handleExportCSV}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center justify-center hover:bg-green-700"
-                    >
+                    <button onClick={handleExportCSV} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center justify-center hover:bg-green-700">
                         <IconDownload className="w-5 h-5 mr-2" />
                         {selectedCount > 0 ? `Export Selected (${selectedCount})` : 'Export to CSV'}
                     </button>
 
-                    {pdfExportData.length > 0 && (
-                        <PDFDownloadLink
-                            key={`pdf-export-${selectedCount}`}
-                            document={<PdfDocument data={pdfExportData} />}
-                            fileName={`penumpang_${new Date().toISOString().split('T')[0]}.pdf`}
-                        >
-                            {({ blob, url, loading }) => (
-                                <button
-                                    className={`bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center justify-center ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-yellow-700'
-                                        }`}
-                                    disabled={loading}
-                                >
-                                    <IconDownload className="w-5 h-5 mr-2" />
-                                    {loading
-                                        ? 'Preparing PDF...'
-                                        : selectedCount > 0
-                                            ? `Export Selected (${selectedCount}) to PDF`
-                                            : 'Export to PDF'}
-                                </button>
-                            )}
-                        </PDFDownloadLink>
-                    )}
+                    <button
+                        onClick={() => generatePDFWithJsPDF(pdfExportData)}
+                        className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center justify-center hover:bg-yellow-700"
+                    >
+                        <IconDownload className="w-5 h-5 mr-2" />
+                        {selectedCount > 0
+                            ? `Export Selected (${selectedCount}) to PDF`
+                            : 'Export to PDF'
+                        }
+                    </button>
 
                     {selectedCount > 0 && (
-                        <button
-                            onClick={handleDeleteSelected}
-                            className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center justify-center hover:bg-red-700"
-                        >
+                        <button onClick={handleDeleteSelected} className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center justify-center hover:bg-red-700">
                             <IconTrash className="w-5 h-5 mr-2" />Delete Selected ({selectedCount})
                         </button>
                     )}
@@ -738,106 +681,51 @@ export default function Penumpang() {
 
                 <div className="mb-4 flex items-center space-x-2 border border-gray-300 rounded-lg px-3">
                     <IconSearch className="w-5 h-5 text-gray-500" />
-                    <input
-                        type="text"
-                        placeholder="Cari nama, tujuan, nopol, atau kapal..."
-                        className="w-full px-3 py-2 rounded focus:outline-none"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                    <input type="text" placeholder="Cari nama, tujuan, nopol, atau kapal..." className="w-full px-3 py-2 rounded focus:outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
 
                 <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label htmlFor="filterStartDate" className="block text-gray-700 mb-1">Dari Tanggal</label>
-                        <input
-                            type="date"
-                            id="filterStartDate"
-                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                            value={filterStartDate}
-                            onChange={(e) => setFilterStartDate(e.target.value)}
-                        />
+                        <input type="date" id="filterStartDate" className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} />
                     </div>
                     <div>
                         <label htmlFor="filterEndDate" className="block text-gray-700 mb-1">Sampai Tanggal</label>
-                        <input
-                            type="date"
-                            id="filterEndDate"
-                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                            value={filterEndDate}
-                            onChange={(e) => setFilterEndDate(e.target.value)}
-                        />
+                        <input type="date" id="filterEndDate" className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} />
                     </div>
                     <div>
                         <label htmlFor="itemsPerPage" className="block text-gray-700 mb-1">Data per Halaman</label>
-                        <select
-                            id="itemsPerPage"
-                            value={itemsPerPage}
-                            onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                        >
+                        <select id="itemsPerPage" value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">
                             {ITEMS_PER_PAGE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                         </select>
                     </div>
                     <div className="flex items-end">
-                        <button
-                            onClick={handleResetFilters}
-                            className="w-full bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                        >
-                            Reset Filter
-                        </button>
+                        <button onClick={handleResetFilters} className="w-full bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Reset Filter</button>
                     </div>
                 </div>
 
                 <div className="mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div className="text-sm text-gray-600">
                         Menampilkan {penumpang.length} dari {totalData} data
+                        {selectedCount > 0 && (
+                            <span className="ml-2 text-blue-600 font-medium">
+                                • {selectedCount} dipilih
+                            </span>
+                        )}
+                        <div className="text-xs text-gray-500 mt-1">
+                            Tip: Klik baris untuk memilih/batal memilih data
+                        </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <button
-                            onClick={() => setCurrentPage(1)}
-                            disabled={currentPage === 1}
-                            className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100"
-                            aria-label="First page"
-                        >
-                            «
-                        </button>
-                        <button
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage === 1}
-                            className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100"
-                            aria-label="Previous page"
-                        >
-                            ‹
-                        </button>
-                        <input
-                            type="number"
-                            value={currentPage}
-                            onChange={(e) => {
-                                const page = parseInt(e.target.value) || 1;
-                                setCurrentPage(Math.max(1, Math.min(page, totalPages)));
-                            }}
-                            className="w-16 px-2 py-1 border rounded text-center"
-                            min="1"
-                            max={totalPages}
-                        />
+                        <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100 transition-colors">«</button>
+                        <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100 transition-colors">‹</button>
+                        <input type="number" value={currentPage} onChange={(e) => {
+                            const page = parseInt(e.target.value) || 1;
+                            setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+                        }} className="w-16 px-2 py-1 border rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500" min="1" max={totalPages} />
                         <span className="px-2">/ {totalPages}</span>
-                        <button
-                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={currentPage === totalPages}
-                            className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100"
-                            aria-label="Next page"
-                        >
-                            ›
-                        </button>
-                        <button
-                            onClick={() => setCurrentPage(totalPages)}
-                            disabled={currentPage === totalPages}
-                            className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100"
-                            aria-label="Last page"
-                        >
-                            »
-                        </button>
+                        <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100 transition-colors">›</button>
+                        <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100 transition-colors">»</button>
                     </div>
                 </div>
 
@@ -875,6 +763,6 @@ export default function Penumpang() {
                 onCancel={() => setConfirmDialog({ isOpen: false, id: '', type: 'single' })}
                 isProcessing={isDeleting}
             />
-        </div >
+        </div>
     );
 }
