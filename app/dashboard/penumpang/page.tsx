@@ -10,7 +10,7 @@ const PDFDownloadLink = dynamic(
     {
         ssr: false,
         loading: () => (
-            <button className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center justify-center opacity-50 cursor-not-allowed">
+            <button disabled className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center justify-center opacity-50 cursor-not-allowed">
                 <IconDownload className="w-5 h-5 mr-2" />Preparing PDF...
             </button>
         )
@@ -30,17 +30,18 @@ interface Penumpang {
     kapal: string;
 }
 
-const ITEMS_PER_PAGE = 200;
 const SEARCH_DEBOUNCE_MS = 500;
 
 const TUJUAN_OPTIONS = ["Pel Tarjun", "Pel Stagen"];
 const GOLONGAN_OPTIONS = ["I", "II", "III", "IVa", "IVb", "V", "VI", "VII", "VIII", "IX"];
 const KAPAL_OPTIONS = ["KMF Stagen", "KMF Tarjun", "KMF Benua Raya"];
+const ITEMS_PER_PAGE_OPTIONS = [200, 300, 500];
 
 const TableRow = memo(({
     item,
     index,
     currentPage,
+    itemsPerPage,
     isSelected,
     onSelect,
     onEdit,
@@ -50,6 +51,7 @@ const TableRow = memo(({
     item: Penumpang;
     index: number;
     currentPage: number;
+    itemsPerPage: number;
     isSelected: boolean;
     onSelect: (id: string) => void;
     onEdit: (item: Penumpang) => void;
@@ -65,7 +67,7 @@ const TableRow = memo(({
                 aria-label={`Select ${item.nama}`}
             />
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-center">{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-center">{(currentPage - 1) * itemsPerPage + index + 1}</td>
         <td className="px-6 py-4 whitespace-nowrap">{item.nama}</td>
         <td className="px-6 py-4 whitespace-nowrap">{item.usia}</td>
         <td className="px-6 py-4 whitespace-nowrap text-center">{item.jenisKelamin}</td>
@@ -108,6 +110,7 @@ const PenumpangTable = memo(({
     selectedRows,
     allChecked,
     currentPage,
+    itemsPerPage,
     onSelectAll,
     onSelectRow,
     onEdit,
@@ -119,6 +122,7 @@ const PenumpangTable = memo(({
     selectedRows: Set<string>;
     allChecked: boolean;
     currentPage: number;
+    itemsPerPage: number;
     onSelectAll: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onSelectRow: (id: string) => void;
     onEdit: (item: Penumpang) => void;
@@ -162,6 +166,7 @@ const PenumpangTable = memo(({
                             item={item}
                             index={index}
                             currentPage={currentPage}
+                            itemsPerPage={itemsPerPage}
                             isSelected={selectedRows.has(item.id)}
                             onSelect={onSelectRow}
                             onEdit={onEdit}
@@ -410,6 +415,7 @@ ConfirmDialog.displayName = 'ConfirmDialog';
 
 export default function Penumpang() {
     const [penumpang, setPenumpang] = useState<Penumpang[]>([]);
+    const [totalData, setTotalData] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedPenumpang, setSelectedPenumpang] = useState<Penumpang | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -421,18 +427,51 @@ export default function Penumpang() {
     const [filterStartDate, setFilterStartDate] = useState("");
     const [filterEndDate, setFilterEndDate] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE_OPTIONS[0]);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, id: '', type: 'single' });
     const [isDeleting, setIsDeleting] = useState(false);
     const abortControllerRef = useRef<AbortController | null>(null);
 
+    const fetchPenumpang = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        abortControllerRef.current?.abort();
+        abortControllerRef.current = new AbortController();
+
+        const params = new URLSearchParams({
+            page: String(currentPage),
+            limit: String(itemsPerPage),
+            search: debouncedSearchTerm,
+            startDate: filterStartDate,
+            endDate: filterEndDate,
+        });
+
+        try {
+            const response = await fetch(`/api/penumpang?${params.toString()}`, {
+                signal: abortControllerRef.current.signal
+            });
+            if (!response.ok) throw new Error('Failed to fetch data');
+            const { data, total } = await response.json();
+            setPenumpang(data);
+            setTotalData(total);
+        } catch (err: unknown) {
+            if (err instanceof Error && err.name !== 'AbortError') {
+                setError("Gagal memuat data penumpang");
+                console.error("Error fetching penumpang:", err);
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentPage, itemsPerPage, debouncedSearchTerm, filterStartDate, filterEndDate]);
+
     useEffect(() => {
         fetchPenumpang();
         return () => {
             abortControllerRef.current?.abort();
         };
-    }, []);
+    }, [fetchPenumpang]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -444,7 +483,7 @@ export default function Penumpang() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [filterStartDate, filterEndDate]);
+    }, [filterStartDate, filterEndDate, itemsPerPage]);
 
     useEffect(() => {
         if (successMessage) {
@@ -460,62 +499,12 @@ export default function Penumpang() {
         }
     }, [error]);
 
-    const filteredPenumpang = useMemo(() => {
-        let filtered = penumpang;
-        if (debouncedSearchTerm) {
-            const searchLower = debouncedSearchTerm.toLowerCase();
-            filtered = filtered.filter(p =>
-                p.nama.toLowerCase().includes(searchLower) ||
-                p.tujuan.toLowerCase().includes(searchLower) ||
-                p.nopol.toLowerCase().includes(searchLower) ||
-                p.kapal.toLowerCase().includes(searchLower)
-            );
-        }
-        if (filterStartDate) {
-            filtered = filtered.filter(p => new Date(p.tanggal) >= new Date(filterStartDate));
-        }
-        if (filterEndDate) {
-            const endDate = new Date(filterEndDate);
-            endDate.setHours(23, 59, 59, 999);
-            filtered = filtered.filter(p => new Date(p.tanggal) <= endDate);
-        }
-        return filtered;
-    }, [penumpang, debouncedSearchTerm, filterStartDate, filterEndDate]);
-
-    const paginatedData = useMemo(() => {
-        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-        return filteredPenumpang.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-    }, [filteredPenumpang, currentPage]);
-
     const pdfExportData = useMemo(() => {
-        return selectedRows.size > 0 ? penumpang.filter(p => selectedRows.has(p.id)) : filteredPenumpang;
-    }, [selectedRows, penumpang, filteredPenumpang]);
+        return selectedRows.size > 0 ? penumpang.filter(p => selectedRows.has(p.id)) : penumpang;
+    }, [selectedRows, penumpang]);
 
-    const totalPages = Math.ceil(filteredPenumpang.length / ITEMS_PER_PAGE);
+    const totalPages = Math.ceil(totalData / itemsPerPage);
     const selectedCount = selectedRows.size;
-
-    const fetchPenumpang = async () => {
-        setIsLoading(true);
-        setError(null);
-        abortControllerRef.current?.abort();
-        abortControllerRef.current = new AbortController();
-
-        try {
-            const response = await fetch("/api/penumpang", {
-                signal: abortControllerRef.current.signal
-            });
-            if (!response.ok) throw new Error('Failed to fetch data');
-            const data = await response.json();
-            setPenumpang(data);
-        } catch (err: unknown) {
-            if (err instanceof Error && err.name !== 'AbortError') {
-                setError("Gagal memuat data penumpang");
-                console.error("Error fetching penumpang:", err);
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     const handleModalOpen = useCallback((type: "add" | "edit" | "view", penumpang?: Penumpang) => {
         setModalType(type);
@@ -603,11 +592,11 @@ export default function Penumpang() {
 
     const handleSelectAll = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
-            setSelectedRows(new Set(paginatedData.map(p => p.id)));
+            setSelectedRows(new Set(penumpang.map(p => p.id)));
         } else {
             setSelectedRows(new Set());
         }
-    }, [paginatedData]);
+    }, [penumpang]);
 
     const handleSelectRow = useCallback((id: string) => {
         setSelectedRows(prev => {
@@ -625,9 +614,17 @@ export default function Penumpang() {
         setConfirmDialog({ isOpen: true, id: '', type: 'multiple' });
     };
 
-    const handleExportCSV = useCallback(() => {
+    const handleExportCSV = useCallback(async () => {
         try {
-            const dataToExport = selectedCount > 0 ? penumpang.filter(p => selectedRows.has(p.id)) : filteredPenumpang;
+            let dataToExport: Penumpang[] = [];
+            if (selectedCount > 0) {
+                dataToExport = penumpang.filter(p => selectedRows.has(p.id));
+            } else {
+                const response = await fetch(`/api/penumpang?limit=${totalData}`);
+                const { data } = await response.json();
+                dataToExport = data;
+            }
+
             const csvData = dataToExport.map((p, index) => ({
                 No: index + 1,
                 Nama: p.nama,
@@ -655,7 +652,7 @@ export default function Penumpang() {
         } catch {
             setError("Gagal export data ke CSV");
         }
-    }, [selectedRows, selectedCount, penumpang, filteredPenumpang]);
+    }, [selectedRows, selectedCount, penumpang, totalData]);
 
     const handleResetFilters = useCallback(() => {
         setSearchTerm("");
@@ -664,7 +661,7 @@ export default function Penumpang() {
         setCurrentPage(1);
     }, []);
 
-    const allChecked = paginatedData.length > 0 && paginatedData.every(item => selectedRows.has(item.id));
+    const allChecked = penumpang.length > 0 && penumpang.every(item => selectedRows.has(item.id));
 
     const handleEdit = useCallback((item: Penumpang) => handleModalOpen("edit", item), [handleModalOpen]);
     const handleView = useCallback((item: Penumpang) => handleModalOpen("view", item), [handleModalOpen]);
@@ -687,7 +684,7 @@ export default function Penumpang() {
 
             <div className="bg-white p-6 rounded-lg shadow mb-6">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                    Manifest Data Penumpang ({filteredPenumpang.length} data)
+                    Manifest Data Penumpang ({totalData} data)
                 </h2>
 
                 <div className="mb-4 grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
@@ -706,18 +703,26 @@ export default function Penumpang() {
                         {selectedCount > 0 ? `Export Selected (${selectedCount})` : 'Export to CSV'}
                     </button>
 
-                    {PDFDownloadLink && (
+                    {pdfExportData.length > 0 && (
                         <PDFDownloadLink
-                            key={`${selectedRows.size}-${pdfExportData.length}`}
+                            key={`pdf-export-${selectedCount}`}
                             document={<PdfDocument data={pdfExportData} />}
                             fileName={`penumpang_${new Date().toISOString().split('T')[0]}.pdf`}
-                            className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center justify-center hover:bg-yellow-700"
                         >
-                            {({ loading }) =>
-                                loading ? 'Preparing PDF...' :
-                                    <><IconDownload className="w-5 h-5 mr-2" />
-                                        {selectedCount > 0 ? `Export Selected (${selectedCount}) to PDF` : 'Export to PDF'}</>
-                            }
+                            {({ blob, url, loading }) => (
+                                <button
+                                    className={`bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center justify-center ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-yellow-700'
+                                        }`}
+                                    disabled={loading}
+                                >
+                                    <IconDownload className="w-5 h-5 mr-2" />
+                                    {loading
+                                        ? 'Preparing PDF...'
+                                        : selectedCount > 0
+                                            ? `Export Selected (${selectedCount}) to PDF`
+                                            : 'Export to PDF'}
+                                </button>
+                            )}
                         </PDFDownloadLink>
                     )}
 
@@ -742,7 +747,7 @@ export default function Penumpang() {
                     />
                 </div>
 
-                <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label htmlFor="filterStartDate" className="block text-gray-700 mb-1">Dari Tanggal</label>
                         <input
@@ -763,6 +768,17 @@ export default function Penumpang() {
                             onChange={(e) => setFilterEndDate(e.target.value)}
                         />
                     </div>
+                    <div>
+                        <label htmlFor="itemsPerPage" className="block text-gray-700 mb-1">Data per Halaman</label>
+                        <select
+                            id="itemsPerPage"
+                            value={itemsPerPage}
+                            onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                        >
+                            {ITEMS_PER_PAGE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                    </div>
                     <div className="flex items-end">
                         <button
                             onClick={handleResetFilters}
@@ -775,7 +791,7 @@ export default function Penumpang() {
 
                 <div className="mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div className="text-sm text-gray-600">
-                        Menampilkan {Math.min(ITEMS_PER_PAGE, paginatedData.length)} dari {filteredPenumpang.length} data
+                        Menampilkan {penumpang.length} dari {totalData} data
                     </div>
                     <div className="flex items-center space-x-2">
                         <button
@@ -826,11 +842,12 @@ export default function Penumpang() {
                 </div>
 
                 <PenumpangTable
-                    paginatedData={paginatedData}
+                    paginatedData={penumpang}
                     isLoading={isLoading}
                     selectedRows={selectedRows}
                     allChecked={allChecked}
                     currentPage={currentPage}
+                    itemsPerPage={itemsPerPage}
                     onSelectAll={handleSelectAll}
                     onSelectRow={handleSelectRow}
                     onEdit={handleEdit}
@@ -858,6 +875,6 @@ export default function Penumpang() {
                 onCancel={() => setConfirmDialog({ isOpen: false, id: '', type: 'single' })}
                 isProcessing={isDeleting}
             />
-        </div>
+        </div >
     );
 }
