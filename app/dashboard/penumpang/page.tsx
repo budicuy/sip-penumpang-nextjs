@@ -406,7 +406,7 @@ const PenumpangModal = memo(({ isModalOpen, modalType, isSubmitting, selectedPen
                         </div>
                         <div className="mb-4">
                             <label htmlFor="tanggal" className="block text-gray-700 mb-1">Tanggal</label>
-                            <input type="date" id="tanggal" name="tanggal" defaultValue={selectedPenumpang?.tanggal ? new Date(selectedPenumpang.tanggal).toISOString().split("T")[0] : ""} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" required max={new Date().toISOString().split("T")[0]} />
+                            <input type="date" id="tanggal" name="tanggal" defaultValue={selectedPenumpang?.tanggal ? new Date(selectedPenumpang.tanggal).toISOString().split("T")[0] : ""} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" required />
                         </div>
                         <div className="mb-4">
                             <label htmlFor="nopol" className="block text-gray-700 mb-1">No. Polisi</label>
