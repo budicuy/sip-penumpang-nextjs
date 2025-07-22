@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export async function GET() {
     try {
-        const penumpang = await prisma.penumpang.findMany();
+        const penumpang = await prisma.penumpang.findMany({ orderBy: { createdAt: 'desc' } });
         return NextResponse.json(penumpang);
     } catch {
         return NextResponse.json({ error: 'Error fetching penumpang' }, { status: 500 });

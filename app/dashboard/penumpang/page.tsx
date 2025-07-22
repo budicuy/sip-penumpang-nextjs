@@ -66,7 +66,6 @@ const TableRow = memo(({
 ));
 TableRow.displayName = 'TableRow';
 
-
 const PenumpangTable = memo(({ paginatedData, isLoading, selectedRows, allChecked, currentPage, itemsPerPage, onSelectAll, onSelectRow, onEdit, onDelete, onView }: { paginatedData: Penumpang[]; isLoading: boolean; selectedRows: Set<string>; allChecked: boolean; currentPage: number; itemsPerPage: number; onSelectAll: (e: React.ChangeEvent<HTMLInputElement>) => void; onSelectRow: (id: string) => void; onEdit: (item: Penumpang) => void; onDelete: (id: string) => void; onView: (item: Penumpang) => void; }) => (
     <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -141,11 +140,9 @@ const PenumpangModal = memo(({ isModalOpen, modalType, isSubmitting, selectedPen
             </div>
         </div>
     );
-}
-);
+});
 
 PenumpangModal.displayName = 'PenumpangModal';
-
 
 export default function Penumpang() {
     const [penumpang, setPenumpang] = useState<Penumpang[]>([]);
@@ -195,6 +192,10 @@ export default function Penumpang() {
         const startIndex = (currentPage - 1) * itemsPerPage;
         return filteredPenumpang.slice(startIndex, startIndex + itemsPerPage);
     }, [filteredPenumpang, currentPage, itemsPerPage]);
+
+    const pdfExportData = useMemo(() => {
+        return selectedRows.size > 0 ? penumpang.filter(p => selectedRows.has(p.id)) : filteredPenumpang;
+    }, [selectedRows, penumpang, filteredPenumpang]);
 
     const totalPages = Math.ceil(filteredPenumpang.length / itemsPerPage);
     const selectedCount = selectedRows.size;
@@ -314,8 +315,13 @@ export default function Penumpang() {
                     <button onClick={() => handleModalOpen("add")} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center"><IconPlus className="w-5 h-5 mr-2" />Tambah Data</button>
                     <button onClick={handleExportCSV} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center"><IconDownload className="w-5 h-5 mr-2" />{selectedCount > 0 ? `Export Selected (${selectedCount})` : 'Export All to CSV'}</button>
                     {isPdfReady && (
-                        <PDFDownloadLink key={`${filterStartDate}-${filterEndDate}-${debouncedSearchTerm}`} document={<PdfDocument data={filteredPenumpang} />} fileName="penumpang.pdf" className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center">
-                            {({ loading }) => loading ? 'Loading document...' : <><IconDownload className="w-5 h-5 mr-2" />Export to PDF</>}
+                        <PDFDownloadLink
+                            key={`${selectedRows.size}-${pdfExportData.length}`}
+                            document={<PdfDocument data={pdfExportData} />}
+                            fileName={selectedCount > 0 ? 'selected_penumpang.pdf' : 'penumpang.pdf'}
+                            className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center"
+                        >
+                            {({ loading }) => loading ? 'Loading document...' : <><IconDownload className="w-5 h-5 mr-2" />{selectedCount > 0 ? `Export Selected (${selectedCount}) to PDF` : 'Export All to PDF'}</>}
                         </PDFDownloadLink>
                     )}
                     {selectedCount > 0 && <button onClick={handleDeleteSelected} className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center"><IconTrash className="w-5 h-5 mr-2" />Delete Selected ({selectedCount})</button>}
