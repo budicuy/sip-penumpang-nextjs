@@ -18,7 +18,6 @@ export async function POST(request: Request) {
     const validation = userSchema.safeParse(body);
 
     if (!validation.success) {
-      // ✅ INI BAGIAN YANG DIPERBAIKI
       return NextResponse.json({ error: validation.error.issues[0].message }, { status: 400 });
     }
 
@@ -43,6 +42,7 @@ export async function POST(request: Request) {
       message: 'Pendaftaran berhasil',
       user: userResponse
     }, { status: 201 });
+
 
   } catch (error: unknown) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
