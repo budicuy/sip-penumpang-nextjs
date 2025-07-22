@@ -24,22 +24,17 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
-enum JenisKelamin {
-  L
-  P
-}
-
 model Penumpang {
-  id             String       @id @default(cuid())
-  nama           String // maksimal 255 karakter
-  usia           Int // usia dalam tahun, minimal 0 dan maksimal 160
-  jenisKelamin   JenisKelamin
-  tujuan         String // Opsi tujuan 1. Pel Tarjun, 2. Pel Stagen
-  tanggal        DateTime // tanggal, format YYYY-MM-DD contoh "2023-10-01"
-  nopol          String // nomor polisi kendaraan, maksimal 15 karakter contoh "AB 1234 CD"
-  jenisKendaraan String // jenis kendaraan, maksimal 255 karakter contoh "Avanza", "Toyota", "Civic"
-  golongan       String // golongan kendaraan, maksimal 10 karakter buat opsi "I", "II", "III", "IVa", "IVb", "V", "VI", "VII", "VIII", "IX"
-  kapal          String // buat opsi kapal 1. KMF Stagen, 2. KMF Tarjun, 3. KMF Benua Raya
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id             String   @id @default(cuid())
+  nama           String   @db.VarChar(255) // maksimal 255 karakter
+  usia           Int      @db.SmallInt // usia dalam tahun, minimal 0 dan maksimal 160
+  jenisKelamin   String   @db.Char(1) // L untuk laki-laki, P untuk perempuan
+  tujuan         String   @db.VarChar(255) // Opsi tujuan 1. Pel Tarjun, 2. Pel Stagen
+  tanggal        DateTime @db.Date // tanggal, format YYYY-MM-DD contoh "2023-10-01"
+  nopol          String   @db.VarChar(15) // nomor polisi kendaraan, maksimal 15 karakter contoh "AB 1234 CD"
+  jenisKendaraan String   @db.VarChar(255) // jenis kendaraan, maksimal 255 karakter contoh "Avanza", "Toyota", "Civic"
+  golongan       String   @db.VarChar(10) // golongan kendaraan, maksimal 10 karakter buat opsi "I", "II", "III", "IVa", "IVb", "V", "VI", "VII", "VIII", "IX"
+  kapal          String   @db.VarChar(50) // buat opsi kapal 1. KMF Stagen, 2. KMF Tarjun, 3. KMF Benua Raya
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }

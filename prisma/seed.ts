@@ -1,4 +1,4 @@
-import { PrismaClient, JenisKelamin } from '../app/generated/prisma';
+import { PrismaClient } from '../app/generated/prisma';
 import { faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
@@ -8,7 +8,7 @@ async function main() {
 
   const penumpangData = [];
   for (let i = 0; i < 200; i++) {
-    const jenisKelamin = faker.helpers.arrayElement([JenisKelamin.L, JenisKelamin.P]);
+    const jenisKelamin = faker.helpers.arrayElement(['L', 'P']);
     penumpangData.push({
       nama: faker.person.firstName(),
       usia: faker.number.int({ min: 1, max: 80 }),

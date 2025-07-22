@@ -304,7 +304,6 @@ const PenumpangModal = memo(({
                                 defaultValue={selectedPenumpang?.nopol}
                                 className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
                                 required
-                                pattern="[A-Z]{1,2}\s?\d{1,4}\s?[A-Z]{1,3}"
                                 title="Format: DA 1234 AB"
                                 maxLength={12}
                                 style={{ textTransform: 'uppercase' }}
@@ -508,10 +507,10 @@ export default function Penumpang() {
             if (!response.ok) throw new Error('Failed to fetch data');
             const data = await response.json();
             setPenumpang(data);
-        } catch (error: any) {
-            if (error.name !== 'AbortError') {
+        } catch (err: unknown) {
+            if (err instanceof Error && err.name !== 'AbortError') {
                 setError("Gagal memuat data penumpang");
-                console.error("Error fetching penumpang:", error);
+                console.error("Error fetching penumpang:", err);
             }
         } finally {
             setIsLoading(false);
@@ -558,9 +557,8 @@ export default function Penumpang() {
             await fetchPenumpang();
             handleModalClose();
             setSuccessMessage(`Data berhasil ${modalType === "add" ? "ditambahkan" : "diperbarui"}`);
-        } catch (error) {
+        } catch {
             setError(`Gagal ${modalType === "add" ? "menambahkan" : "memperbarui"} data`);
-            console.error("Error submitting form:", error);
         } finally {
             setIsSubmitting(false);
         }
@@ -596,9 +594,8 @@ export default function Penumpang() {
 
             await fetchPenumpang();
             setConfirmDialog({ isOpen: false, id: '', type: 'single' });
-        } catch (error) {
+        } catch {
             setError("Gagal menghapus data");
-            console.error("Error deleting:", error);
         } finally {
             setIsDeleting(false);
         }
@@ -655,7 +652,7 @@ export default function Penumpang() {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
             setSuccessMessage("Data berhasil diexport ke CSV");
-        } catch (error) {
+        } catch {
             setError("Gagal export data ke CSV");
         }
     }, [selectedRows, selectedCount, penumpang, filteredPenumpang]);
