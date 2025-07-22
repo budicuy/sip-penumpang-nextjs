@@ -9,9 +9,9 @@ datasource db {
 
 model User {
   id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
+  name      String   @db.VarChar(255)
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -19,20 +19,38 @@ model User {
   @@index([id], map: "idx_user_id")
 }
 
-model Penumpang {
-  id             String   @id @default(nanoid(20)) @db.Char(20)
-  nama           String   @db.VarChar(255)
-  usia           Int      @db.SmallInt
-  jenisKelamin   String   @db.Char(1)
-  tujuan         String   @db.VarChar(255)
-  tanggal        DateTime @db.Date
-  nopol          String   @db.VarChar(10)
-  jenisKendaraan String   @db.VarChar(255)
-  golongan       String   @db.VarChar(4)
-  kapal          String   @db.VarChar(50)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+enum jenisKelamin {
+  L
+  P
+}
 
-  @@index([nama], map: "idx_penumpang_nama")
+enum golongan {
+  I
+  II
+  III
+  IVa
+  IVb
+  V
+  VI
+  VII
+  VIII
+  IX
+}
+
+model Penumpang {
+  id             Int          @id @default(autoincrement()) @db.Integer
+  nama           String       @db.VarChar(255)
+  usia           Int          @db.SmallInt
+  jenisKelamin   jenisKelamin
+  tujuan         String       @db.VarChar(255)
+  tanggal        DateTime     @db.Date
+  nopol          String       @db.VarChar(10)
+  jenisKendaraan String       @db.VarChar(255)
+  golongan       golongan
+  kapal          String       @db.VarChar(50)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([nama, tujuan, nopol, kapal, jenisKendaraan], map: "idx_penumpang_nama_tujuan_nopol_kapal_jenisKendaraan")
   @@index([id], map: "idx_penumpang_id")
 }
