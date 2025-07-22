@@ -8,8 +8,8 @@ import axios, { AxiosError } from 'axios';
 
 export default function LoginPage() {
     const router = useRouter();
-    const [email, setEmail] = useState('admin@example.com');
-    const [password, setPassword] = useState('password');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
