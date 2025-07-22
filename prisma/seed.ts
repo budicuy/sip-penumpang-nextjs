@@ -10,7 +10,7 @@ async function main() {
   await prisma.penumpang.deleteMany();
 
   const penumpangData = [];
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 200; i++) {
     const jenisKelamin = faker.helpers.arrayElement(['L', 'P']);
     penumpangData.push({
       nama: faker.person.firstName(),
