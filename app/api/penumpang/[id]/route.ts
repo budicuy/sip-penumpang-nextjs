@@ -5,13 +5,13 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: number }> },
 ) {
   try {
     const { id } = await params;
     const penumpang = await prisma.penumpang.findUnique({
       where: {
-        id: Number(id),
+        id,
       },
     });
 
@@ -31,7 +31,7 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: number }> },
 ) {
   try {
     const { id } = await params;
@@ -50,7 +50,7 @@ export async function PUT(
 
     const updatedPenumpang = await prisma.penumpang.update({
       where: {
-        id: Number(id),
+        id,
       },
       data: {
         nama,
@@ -77,13 +77,13 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: number }> },
 ) {
   try {
     const { id } = await params;
     await prisma.penumpang.delete({
       where: {
-        id: Number(id),
+        id,
       },
     });
 
