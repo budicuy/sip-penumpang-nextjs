@@ -8,9 +8,10 @@ async function main() {
 
   // Delete existing data
   await prisma.penumpang.deleteMany();
+  await prisma.user.deleteMany();
 
   const penumpangData = [];
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 10000; i++) {
     const jenisKelamin = faker.helpers.arrayElement(['L', 'P']);
     penumpangData.push({
       nama: faker.person.firstName(),
@@ -32,9 +33,36 @@ async function main() {
     console.log(`Created penumpang with ID: ${penumpang.id}` + ` - ${penumpang.nama}`);
   }
 
+  const userData = [
+    {
+      name: 'Admin',
+      email: 'admin@example.com',
+      password: 'password', // Pastikan untuk meng-hash password ini di aplikasi Anda
+    },
+    {
+      name: 'User',
+      email: 'user@example.com',
+      password: 'password', // Pastikan untuk meng-hash password ini di aplikasi Anda
+    },
+    {
+      name: 'manager',
+      email: 'manager@example.com',
+      password: 'password', // Pastikan untuk meng-hash password ini di aplikasi Anda
+    }
+  ];
+
+  for (const user of userData) {
+    const createdUser = await prisma.user.create({
+      data: user,
+    });
+    console.log(`Created user with ID: ${createdUser.id}` + ` - ${createdUser.name}`);
+  }
 
   console.log('Seeding finished.');
+
+
 }
+
 
 main()
   .catch((e) => {
