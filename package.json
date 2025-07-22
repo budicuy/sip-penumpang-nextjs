@@ -14,11 +14,12 @@
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
     "@prisma/client": "6.12.0",
-    "@react-pdf/renderer": "^4.3.0",
     "@tabler/icons-react": "^3.34.0",
     "axios": "^1.10.0",
     "bcrypt": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "next": "15.4.2",
     "papaparse": "^5.5.3",
     "react": "19.1.0",

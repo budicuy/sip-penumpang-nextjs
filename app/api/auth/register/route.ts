@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
-import { PrismaClient } from '@/app/generated/prisma';
+import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { Prisma } from '@/app/generated/prisma';
+import { Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 

@@ -6,13 +6,11 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../app/generated/prisma"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DATABASE_URL_DIRECT")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -26,15 +24,15 @@ model User {
 
 model Penumpang {
   id             String   @id @default(cuid())
-  nama           String   @db.VarChar(255) // maksimal 255 karakter
-  usia           Int      @db.SmallInt // usia dalam tahun, minimal 0 dan maksimal 160
-  jenisKelamin   String   @db.Char(1) // L untuk laki-laki, P untuk perempuan
-  tujuan         String   @db.VarChar(255) // Opsi tujuan 1. Pel Tarjun, 2. Pel Stagen
-  tanggal        DateTime @db.Date // tanggal, format YYYY-MM-DD contoh "2023-10-01"
-  nopol          String   @db.VarChar(15) // nomor polisi kendaraan, maksimal 15 karakter contoh "AB 1234 CD"
-  jenisKendaraan String   @db.VarChar(255) // jenis kendaraan, maksimal 255 karakter contoh "Avanza", "Toyota", "Civic"
-  golongan       String   @db.VarChar(10) // golongan kendaraan, maksimal 10 karakter buat opsi "I", "II", "III", "IVa", "IVb", "V", "VI", "VII", "VIII", "IX"
-  kapal          String   @db.VarChar(50) // buat opsi kapal 1. KMF Stagen, 2. KMF Tarjun, 3. KMF Benua Raya
+  nama           String   @db.VarChar(255)
+  usia           Int      @db.SmallInt
+  jenisKelamin   String   @db.Char(1)
+  tujuan         String   @db.VarChar(255)
+  tanggal        DateTime @db.Date
+  nopol          String   @db.VarChar(15)
+  jenisKendaraan String   @db.VarChar(255)
+  golongan       String   @db.VarChar(10)
+  kapal          String   @db.VarChar(50)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
