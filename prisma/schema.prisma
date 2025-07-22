@@ -38,7 +38,7 @@ enum golongan {
 }
 
 model Penumpang {
-  id             Int          @id @default(autoincrement()) @db.Integer
+  id             String       @id @default(nanoid(20)) @db.VarChar(20)
   nama           String       @db.VarChar(255)
   usia           Int          @db.SmallInt
   jenisKelamin   jenisKelamin

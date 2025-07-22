@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: number }> },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -50,7 +50,7 @@ export async function PUT(
 
     const updatedPenumpang = await prisma.penumpang.update({
       where: {
-        id: parseInt(id),
+        id,
       },
       data: {
         nama,
@@ -83,7 +83,7 @@ export async function DELETE(
     const { id } = await params;
     await prisma.penumpang.delete({
       where: {
-        id: parseInt(id),
+        id,
       },
     });
 
