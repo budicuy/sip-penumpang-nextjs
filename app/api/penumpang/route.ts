@@ -31,7 +31,7 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
 
         const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-        const limit = Math.min(1000, Math.max(1, parseInt(searchParams.get('limit') || '200', 10)));
+        const limit = Math.min(10000, Math.max(1, parseInt(searchParams.get('limit') || '200', 10)));
         const search = sanitizeSearchInput(searchParams.get('search') || '');
         const startDateParam = searchParams.get('startDate');
         const endDateParam = searchParams.get('endDate');

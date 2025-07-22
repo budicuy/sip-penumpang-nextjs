@@ -17,23 +17,23 @@ const generatePDFWithJsPDF = (data: Penumpang[]) => {
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold');
         doc.text('MANIFEST DATA PENUMPANG', 148, 20, { align: 'center' });
+        // doc.setLineWidth(0.5);
+        // doc.line(10, 24, 287, 24); // Garis horizontal
 
         const now = new Date();
-        const dateStr = `Tanggal: ${now.toLocaleDateString('id-ID')} ${now.toLocaleTimeString('id-ID')}`;
+        const options: Intl.DateTimeFormatOptions = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        };
+        const dateStr = `Tanggal: ${now.toLocaleDateString('id-ID', options)}`;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text(dateStr, 280, 30, { align: 'right' });
-    };
-
-    // Tambahkan nomor halaman di semua halaman
-    const addFooter = () => {
-        const pageCount = doc.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Halaman ${i} dari ${pageCount}`, 280, 200, { align: 'right' });
-        }
+        doc.text(dateStr, 280, 35, { align: 'right' });
     };
 
     // Header halaman pertama
@@ -70,13 +70,15 @@ const generatePDFWithJsPDF = (data: Penumpang[]) => {
             halign: 'center'
         },
         headStyles: {
-            fillColor: [22, 160, 133],
-            textColor: 255,
+            fillColor: "blue", // Dark blue header
+            textColor: "white",
             fontStyle: 'bold',
             halign: 'center',
             fontSize: 8
         },
-        alternateRowStyles: { fillColor: [245, 245, 245] },
+        alternateRowStyles: {
+            fillColor: [240, 248, 255], // Light blue for alternate rows
+        },
         columnStyles: {
             0: { cellWidth: 15, halign: 'center' },    // No - lebih besar
             1: { cellWidth: 45, halign: 'center' },    // Nama - lebih besar
@@ -95,7 +97,7 @@ const generatePDFWithJsPDF = (data: Penumpang[]) => {
             right: Math.max(10, leftMargin),
             bottom: 30 // Space untuk footer
         },
-        theme: 'striped',
+        theme: 'grid',
         didDrawPage: (data) => {
             // Tambahkan header di setiap halaman baru
             if (data.pageNumber > 1) {
@@ -104,25 +106,60 @@ const generatePDFWithJsPDF = (data: Penumpang[]) => {
         }
     });
 
-    const finalY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 25;
-    doc.setFontSize(12);
+    // Dapatkan posisi Y terakhir dari tabel
+    const finalY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
 
-    // Signature hanya di halaman terakhir
-    const currentPage = doc.getCurrentPageInfo().pageNumber;
-    const totalPages = doc.getNumberOfPages();
+    // Tinggi yang dibutuhkan untuk tanda tangan (termasuk margin)
+    const signatureHeight = 35; // 25mm untuk tanda tangan + 10mm margin
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const bottomMargin = 30; // Margin bawah halaman
 
-    if (currentPage === totalPages) {
+    // Cek apakah ada cukup ruang untuk tanda tangan di halaman saat ini
+    const availableSpace = pageHeight - finalY - bottomMargin;
+
+    // Jika tidak cukup ruang, tambahkan halaman baru
+    if (availableSpace < signatureHeight) {
+        doc.addPage();
+        addHeader(); // Tambahkan header di halaman baru
+
+        // Set posisi Y untuk tanda tangan di halaman baru
+        const signatureY = 60; // Posisi Y di halaman baru (setelah header)
+
+        doc.setFontSize(12);
         const pageWidthForSignature = doc.internal.pageSize.getWidth();
         const leftSignature = pageWidthForSignature * 0.25;
         const rightSignature = pageWidthForSignature * 0.75;
 
-        doc.text('Petugas', leftSignature, finalY, { align: 'center' });
-        doc.text('Nahkoda', rightSignature, finalY, { align: 'center' });
-        doc.text('(...............................)', leftSignature, finalY + 25, { align: 'center' });
-        doc.text('(...............................)', rightSignature, finalY + 25, { align: 'center' });
+        doc.text('Petugas', leftSignature, signatureY, { align: 'center' });
+        doc.text('Nahkoda', rightSignature, signatureY, { align: 'center' });
+        doc.text('(...............................)', leftSignature, signatureY + 25, { align: 'center' });
+        doc.text('(...............................)', rightSignature, signatureY + 25, { align: 'center' });
+    } else {
+        // Ada cukup ruang di halaman saat ini
+        const signatureY = finalY + 25;
+
+        doc.setFontSize(12);
+        const pageWidthForSignature = doc.internal.pageSize.getWidth();
+        const leftSignature = pageWidthForSignature * 0.25;
+        const rightSignature = pageWidthForSignature * 0.75;
+
+        doc.text('Petugas', leftSignature, signatureY, { align: 'center' });
+        doc.text('Nahkoda', rightSignature, signatureY, { align: 'center' });
+        doc.text('(...............................)', leftSignature, signatureY + 25, { align: 'center' });
+        doc.text('(...............................)', rightSignature, signatureY + 25, { align: 'center' });
     }
 
     // Tambahkan nomor halaman di semua halaman
+    const addFooter = () => {
+        const pageCount = doc.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${i}`, 280, 200, { align: 'center' });
+        }
+    };
+
     addFooter();
 
     doc.save(`penumpang_${new Date().toISOString().split('T')[0]}.pdf`);
@@ -145,7 +182,7 @@ const SEARCH_DEBOUNCE_MS = 500;
 const TUJUAN_OPTIONS = ["Pel Tarjun", "Pel Stagen"];
 const GOLONGAN_OPTIONS = ["I", "II", "III", "IVa", "IVb", "V", "VI", "VII", "VIII", "IX"];
 const KAPAL_OPTIONS = ["KMF Stagen", "KMF Tarjun", "KMF Benua Raya"];
-const ITEMS_PER_PAGE_OPTIONS = [200, 300, 500];
+const ITEMS_PER_PAGE_OPTIONS = [50, 100, 200, 300, 500, 1000, 2000, 5000, 10000];
 
 const TableRow = memo(({ item, index, currentPage, itemsPerPage, isSelected, onSelect, onEdit, onDelete, onView }: {
     item: Penumpang;
@@ -981,11 +1018,15 @@ export default function Penumpang() {
                 <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label htmlFor="filterStartDate" className="block text-gray-700 mb-1">Dari Tanggal</label>
-                        <input type="date" id="filterStartDate" className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} />
+                        <input type="date"
+                            placeholder="Pilih tanggal mulai"
+                            id="filterStartDate" className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} />
                     </div>
                     <div>
                         <label htmlFor="filterEndDate" className="block text-gray-700 mb-1">Sampai Tanggal</label>
-                        <input type="date" id="filterEndDate" className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} />
+                        <input type="date"
+                            placeholder="Pilih tanggal akhir"
+                            id="filterEndDate" className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} />
                     </div>
                     <div>
                         <label htmlFor="itemsPerPage" className="block text-gray-700 mb-1">Data per Halaman</label>

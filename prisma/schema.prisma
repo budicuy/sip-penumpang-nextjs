@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,25 +8,31 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   name      String
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([email], map: "idx_user_email")
+  @@index([id], map: "idx_user_id")
 }
 
 model Penumpang {
-  id             String   @id @default(cuid())
+  id             String   @id @default(nanoid(20)) @db.Char(20)
   nama           String   @db.VarChar(255)
   usia           Int      @db.SmallInt
   jenisKelamin   String   @db.Char(1)
   tujuan         String   @db.VarChar(255)
   tanggal        DateTime @db.Date
-  nopol          String   @db.VarChar(15)
+  nopol          String   @db.VarChar(10)
   jenisKendaraan String   @db.VarChar(255)
-  golongan       String   @db.VarChar(10)
+  golongan       String   @db.VarChar(4)
   kapal          String   @db.VarChar(50)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@index([nama], map: "idx_penumpang_nama")
+  @@index([id], map: "idx_penumpang_id")
 }
