@@ -133,21 +133,24 @@ export async function GET(request: Request) {
                 }
             });
 
-        } catch (dbError: any) {
+        } catch (dbError: unknown) {
             console.error('Database error:', dbError);
 
-            if (dbError.code === 'P2024') {
-                return NextResponse.json({
-                    error: 'Database timeout. Please try again.',
-                    code: 'TIMEOUT'
-                }, { status: 504 });
-            }
+            // Type guard untuk Prisma error
+            if (dbError instanceof Prisma.PrismaClientKnownRequestError) {
+                if (dbError.code === 'P2024') {
+                    return NextResponse.json({
+                        error: 'Database timeout. Please try again.',
+                        code: 'TIMEOUT'
+                    }, { status: 504 });
+                }
 
-            if (dbError.code?.startsWith('P2')) {
-                return NextResponse.json({
-                    error: 'Database query error. Please check your filters.',
-                    code: 'QUERY_ERROR'
-                }, { status: 400 });
+                if (dbError.code?.startsWith('P2')) {
+                    return NextResponse.json({
+                        error: 'Database query error. Please check your filters.',
+                        code: 'QUERY_ERROR'
+                    }, { status: 400 });
+                }
             }
 
             return NextResponse.json({
@@ -156,10 +159,10 @@ export async function GET(request: Request) {
             }, { status: 503 });
         }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('API Error:', error);
 
-        if (error.name === 'SyntaxError') {
+        if (error instanceof Error && error.name === 'SyntaxError') {
             return NextResponse.json({
                 error: 'Invalid request format',
                 code: 'SYNTAX_ERROR'
@@ -207,21 +210,24 @@ export async function POST(request: Request) {
 
         return NextResponse.json(newPenumpang, { status: 201 });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('POST Error:', error);
 
-        if (error.code === 'P2002') {
-            return NextResponse.json({
-                error: 'Data already exists',
-                code: 'DUPLICATE_ERROR'
-            }, { status: 409 });
-        }
+        // Type guard untuk Prisma error
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2002') {
+                return NextResponse.json({
+                    error: 'Data already exists',
+                    code: 'DUPLICATE_ERROR'
+                }, { status: 409 });
+            }
 
-        if (error.code?.startsWith('P2')) {
-            return NextResponse.json({
-                error: 'Database constraint error',
-                code: 'CONSTRAINT_ERROR'
-            }, { status: 400 });
+            if (error.code?.startsWith('P2')) {
+                return NextResponse.json({
+                    error: 'Database constraint error',
+                    code: 'CONSTRAINT_ERROR'
+                }, { status: 400 });
+            }
         }
 
         return NextResponse.json({

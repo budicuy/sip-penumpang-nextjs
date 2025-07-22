@@ -2,7 +2,6 @@
 import { IconEdit, IconTrash, IconEye, IconPlus, IconDownload, IconSearch, IconX } from "@tabler/icons-react";
 import { useState, useEffect, FormEvent, useCallback, useMemo, memo, useRef } from "react";
 import Papa from "papaparse";
-import dynamic from "next/dynamic";
 
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
