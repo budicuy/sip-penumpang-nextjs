@@ -1,6 +1,6 @@
 "use client";
 import { IconEdit, IconTrash, IconEye, IconPlus, IconDownload, IconSearch } from "@tabler/icons-react";
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, FormEvent, useCallback, useMemo, memo } from "react";
 import Papa from "papaparse";
 
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -21,6 +21,73 @@ interface Penumpang {
     kapal: string;
 }
 
+const TableRow = memo(({
+    item,
+    index,
+    currentPage,
+    itemsPerPage,
+    isSelected,
+    onSelect,
+    onEdit,
+    onDelete,
+    onView
+}: {
+    item: Penumpang;
+    index: number;
+    currentPage: number;
+    itemsPerPage: number;
+    isSelected: boolean;
+    onSelect: (id: string) => void;
+    onEdit: (item: Penumpang) => void;
+    onDelete: (id: string) => void;
+    onView: (item: Penumpang) => void;
+}) => (
+    <tr className={`hover:bg-gray-100 border-b border-gray-200 ${isSelected ? 'bg-blue-100' : ''}`}>
+        <td className="px-6 py-4 whitespace-nowrap">
+            <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => onSelect(item.id)}
+            />
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+        <td className="px-6 py-4 whitespace-nowrap">{item.nama}</td>
+        <td className="px-6 py-4 whitespace-nowrap">{item.usia}</td>
+        <td className="px-6 py-4 whitespace-nowrap">{item.jenisKelamin}</td>
+        <td className="px-6 py-4 whitespace-nowrap">{item.tujuan}</td>
+        <td className="px-6 py-4 whitespace-nowrap">
+            {new Date(item.tanggal).toLocaleDateString()}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+            {new Date(item.jam).toLocaleTimeString()}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">{item.nopol}</td>
+        <td className="px-6 py-4 whitespace-nowrap">{item.jenisKendaraan}</td>
+        <td className="px-6 py-4 whitespace-nowrap">{item.golongan}</td>
+        <td className="px-6 py-4 whitespace-nowrap">{item.kapal}</td>
+        <td className="px-6 py-4 whitespace-nowrap flex items-center space-x-1">
+            <button
+                onClick={() => onEdit(item)}
+                className="text-blue-600 hover:text-blue-800 p-2 bg-blue-100 rounded"
+            >
+                <IconEdit className="w-4 h-4" />
+            </button>
+            <button
+                onClick={() => onDelete(item.id)}
+                className="text-red-600 hover:text-red-800 p-2 bg-red-100 rounded"
+            >
+                <IconTrash className="w-4 h-4" />
+            </button>
+            <button
+                onClick={() => onView(item)}
+                className="text-green-600 hover:text-green-800 p-2 bg-green-100 rounded"
+            >
+                <IconEye className="w-4 h-4" />
+            </button>
+        </td>
+    </tr>
+));
+
 export default function Penumpang() {
     const [penumpang, setPenumpang] = useState<Penumpang[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -28,14 +95,16 @@ export default function Penumpang() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalType, setModalType] = useState<"add" | "edit" | "view">("add");
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [selectedRows, setSelectedRows] = useState<string[]>([]);
-    const [filteredPenumpang, setFilteredPenumpang] = useState<Penumpang[]>([]);
+    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
     const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [filterStartDate, setFilterStartDate] = useState("");
     const [filterEndDate, setFilterEndDate] = useState("");
     const [filterStartTime, setFilterStartTime] = useState("");
     const [filterEndTime, setFilterEndTime] = useState("");
     const [isPdfReady, setIsPdfReady] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 200;
 
     useEffect(() => {
         fetchPenumpang();
@@ -43,22 +112,37 @@ export default function Penumpang() {
     }, []);
 
     useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+            setCurrentPage(1);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filterStartDate, filterEndDate, filterStartTime, filterEndTime]);
+
+    const filteredPenumpang = useMemo(() => {
         let filtered = penumpang;
 
-        if (searchTerm) {
+        if (debouncedSearchTerm) {
+            const searchLower = debouncedSearchTerm.toLowerCase();
             filtered = filtered.filter(p =>
-                p.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                p.tujuan.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                p.nopol.toLowerCase().includes(searchTerm.toLowerCase())
+                p.nama.toLowerCase().includes(searchLower) ||
+                p.tujuan.toLowerCase().includes(searchLower) ||
+                p.nopol.toLowerCase().includes(searchLower)
             );
         }
 
         if (filterStartDate) {
-            filtered = filtered.filter(p => new Date(p.tanggal) >= new Date(filterStartDate));
+            const startDate = new Date(filterStartDate);
+            filtered = filtered.filter(p => new Date(p.tanggal) >= startDate);
         }
 
         if (filterEndDate) {
-            filtered = filtered.filter(p => new Date(p.tanggal) <= new Date(filterEndDate));
+            const endDate = new Date(filterEndDate);
+            filtered = filtered.filter(p => new Date(p.tanggal) <= endDate);
         }
 
         if (filterStartTime) {
@@ -69,8 +153,16 @@ export default function Penumpang() {
             filtered = filtered.filter(p => new Date(p.jam).toTimeString().split(' ')[0] <= filterEndTime);
         }
 
-        setFilteredPenumpang(filtered.slice(0, 50));
-    }, [penumpang, searchTerm, filterStartDate, filterEndDate, filterStartTime, filterEndTime]);
+        return filtered;
+    }, [penumpang, debouncedSearchTerm, filterStartDate, filterEndDate, filterStartTime, filterEndTime]);
+
+    const paginatedData = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return filteredPenumpang.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredPenumpang, currentPage, itemsPerPage]);
+
+    const totalPages = Math.ceil(filteredPenumpang.length / itemsPerPage);
+    const selectedCount = selectedRows.size;
 
     const fetchPenumpang = async () => {
         setIsLoading(true);
@@ -85,16 +177,16 @@ export default function Penumpang() {
         }
     };
 
-    const handleModalOpen = (type: "add" | "edit" | "view", penumpang?: Penumpang) => {
+    const handleModalOpen = useCallback((type: "add" | "edit" | "view", penumpang?: Penumpang) => {
         setModalType(type);
         setSelectedPenumpang(penumpang || null);
         setIsModalOpen(true);
-    };
+    }, []);
 
-    const handleModalClose = () => {
+    const handleModalClose = useCallback(() => {
         setIsModalOpen(false);
         setSelectedPenumpang(null);
-    };
+    }, []);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -135,7 +227,7 @@ export default function Penumpang() {
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = useCallback(async (id: string) => {
         if (window.confirm("Are you sure you want to delete this item?")) {
             try {
                 await fetch(`/api/penumpang/${id}`, {
@@ -146,67 +238,67 @@ export default function Penumpang() {
                 console.error("Error deleting penumpang:", error);
             }
         }
-    };
+    }, []);
 
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSelectAll = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
-            const allIds = filteredPenumpang.map((p) => p.id);
-            setSelectedRows(allIds);
+            setSelectedRows(new Set(paginatedData.map(p => p.id)));
         } else {
-            setSelectedRows([]);
+            setSelectedRows(new Set());
         }
-    };
+    }, [paginatedData]);
 
-    const handleSelectRow = (id: string) => {
-        setSelectedRows((prev) =>
-            prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]
-        );
-    };
+    const handleSelectRow = useCallback((id: string) => {
+        setSelectedRows(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(id)) {
+                newSet.delete(id);
+            } else {
+                newSet.add(id);
+            }
+            return newSet;
+        });
+    }, []);
 
     const handleDeleteSelected = async () => {
-        if (window.confirm(`Are you sure you want to delete ${selectedRows.length} selected items?`)) {
+        if (window.confirm(`Are you sure you want to delete ${selectedCount} selected items?`)) {
             try {
                 await Promise.all(
-                    selectedRows.map((id) =>
+                    Array.from(selectedRows).map((id) =>
                         fetch(`/api/penumpang/${id}`, {
                             method: "DELETE",
                         })
                     )
                 );
                 fetchPenumpang();
-                setSelectedRows([]);
+                setSelectedRows(new Set());
             } catch (error) {
                 console.error("Error deleting selected penumpang:", error);
             }
         }
     };
 
-    const handleExportAllCSV = () => {
-        const csv = Papa.unparse(filteredPenumpang);
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'all_penumpang.csv');
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
+    const handleExportCSV = useCallback(() => {
+        const dataToExport = selectedCount > 0
+            ? penumpang.filter(p => selectedRows.has(p.id))
+            : filteredPenumpang;
 
-    const handleExportSelectedCSV = () => {
-        const dataToExport = penumpang.filter(p => selectedRows.includes(p.id));
         const csv = Papa.unparse(dataToExport);
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
-        link.setAttribute('download', 'selected_penumpang.csv');
+        link.setAttribute('download',
+            selectedCount > 0 ? 'selected_penumpang.csv' : 'all_penumpang.csv'
+        );
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    };
+        URL.revokeObjectURL(url);
+    }, [selectedRows, selectedCount, penumpang, filteredPenumpang]);
+
+    const allChecked = paginatedData.length > 0 && paginatedData.every(item => selectedRows.has(item.id));
 
     return (
         <div>
@@ -216,7 +308,7 @@ export default function Penumpang() {
             <div className="bg-white p-6 rounded-lg shadow mb-6">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-800">
-                        Manifest Data Penumpang
+                        Manifest Data Penumpang ({filteredPenumpang.length} data)
                     </h2>
                 </div>
                 <div className="mb-4 grid gap-2 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
@@ -228,11 +320,14 @@ export default function Penumpang() {
                         Tambah Data
                     </button>
                     <button
-                        onClick={handleExportAllCSV}
+                        onClick={handleExportCSV}
                         className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center"
                     >
                         <IconDownload className="w-5 h-5 mr-2" />
-                        Export All to CSV
+                        {selectedCount > 0
+                            ? `Export Selected (${selectedCount})`
+                            : 'Export All to CSV'
+                        }
                     </button>
                     {isPdfReady && (
                         <PDFDownloadLink
@@ -251,23 +346,14 @@ export default function Penumpang() {
                             }
                         </PDFDownloadLink>
                     )}
-                    {selectedRows.length > 0 && (
-                        <>
-                            <button
-                                onClick={handleExportSelectedCSV}
-                                className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center"
-                            >
-                                <IconDownload className="w-5 h-5 mr-2" />
-                                Export Selected to CSV ({selectedRows.length})
-                            </button>
-                            <button
-                                onClick={handleDeleteSelected}
-                                className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center"
-                            >
-                                <IconTrash className="w-5 h-5 mr-2" />
-                                Delete Selected ({selectedRows.length})
-                            </button>
-                        </>
+                    {selectedCount > 0 && (
+                        <button
+                            onClick={handleDeleteSelected}
+                            className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center"
+                        >
+                            <IconTrash className="w-5 h-5 mr-2" />
+                            Delete Selected ({selectedCount})
+                        </button>
                     )}
                 </div>
                 <div className="mb-4 flex items-center space-x-2 border border-gray-300 rounded-lg px-3">
@@ -318,6 +404,32 @@ export default function Penumpang() {
                         />
                     </div>
                 </div>
+
+                <div className="mb-4 flex justify-between items-center">
+                    <div className="text-sm text-gray-600">
+                        Menampilkan {Math.min(itemsPerPage, paginatedData.length)} dari {filteredPenumpang.length} data
+                    </div>
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1 border rounded disabled:opacity-50"
+                        >
+                            Prev
+                        </button>
+                        <span className="px-3 py-1">
+                            {currentPage} / {totalPages}
+                        </span>
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1 border rounded disabled:opacity-50"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead>
@@ -326,7 +438,7 @@ export default function Penumpang() {
                                     <input
                                         type="checkbox"
                                         onChange={handleSelectAll}
-                                        checked={filteredPenumpang.length > 0 && selectedRows.length === filteredPenumpang.length}
+                                        checked={allChecked}
                                     />
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">No</th>
@@ -349,54 +461,19 @@ export default function Penumpang() {
                                     <td colSpan={13} className="text-center py-4">Loading...</td>
                                 </tr>
                             ) : (
-                                filteredPenumpang.map((item, index) => (
-                                    <tr
+                                paginatedData.map((item, index) => (
+                                    <TableRow
                                         key={item.id}
-                                        className={`hover:bg-gray-100 border-b border-gray-200 ${selectedRows.includes(item.id) ? 'bg-blue-100' : ''}`}
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedRows.includes(item.id)}
-                                                onChange={() => handleSelectRow(item.id)}
-                                            />
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">{index + 1}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">{item.nama}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">{item.usia}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">{item.jenisKelamin}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">{item.tujuan}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {new Date(item.tanggal).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {new Date(item.jam).toLocaleTimeString()}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">{item.nopol}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">{item.jenisKendaraan}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">{item.golongan}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">{item.kapal}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap flex items-center space-x-1">
-                                            <button
-                                                onClick={() => handleModalOpen("edit", item)}
-                                                className="text-blue-600 hover:text-blue-800 p-2 bg-blue-100 rounded"
-                                            >
-                                                <IconEdit className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(item.id)}
-                                                className="text-red-600 hover:text-red-800 p-2 bg-red-100 rounded"
-                                            >
-                                                <IconTrash className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleModalOpen("view", item)}
-                                                className="text-green-600 hover:text-green-800 p-2 bg-green-100 rounded"
-                                            >
-                                                <IconEye className="w-4 h-4" />
-                                            </button>
-                                        </td>
-                                    </tr>
+                                        item={item}
+                                        index={index}
+                                        currentPage={currentPage}
+                                        itemsPerPage={itemsPerPage}
+                                        isSelected={selectedRows.has(item.id)}
+                                        onSelect={handleSelectRow}
+                                        onEdit={handleModalOpen.bind(null, "edit")}
+                                        onDelete={handleDelete}
+                                        onView={handleModalOpen.bind(null, "view")}
+                                    />
                                 ))
                             )}
                         </tbody>

@@ -17,6 +17,8 @@ export async function GET() {
             expires: new Date(0)
         });
 
+        // Redirect ke halaman login atau halaman lain yang sesuai
+        response.headers.set('Location', '/login');
         return response;
 
     } catch (error: unknown) {

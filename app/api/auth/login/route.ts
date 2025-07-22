@@ -66,6 +66,8 @@ export async function POST(request: Request) {
       maxAge: COOKIE_MAX_AGE,
     });
 
+    // 7. Redirect ke Dashboard
+    response.headers.set('Location', '/dashboard');
     return response;
 
   } catch (error: unknown) {
