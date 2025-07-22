@@ -159,8 +159,6 @@ export default function Penumpang() {
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [filterStartDate, setFilterStartDate] = useState("");
     const [filterEndDate, setFilterEndDate] = useState("");
-    const [filterStartTime, setFilterStartTime] = useState("");
-    const [filterEndTime, setFilterEndTime] = useState("");
     const [isPdfReady, setIsPdfReady] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 200;
@@ -180,7 +178,7 @@ export default function Penumpang() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [filterStartDate, filterEndDate, filterStartTime, filterEndTime]);
+    }, [filterStartDate, filterEndDate]);
 
     const filteredPenumpang = useMemo(() => {
         let filtered = penumpang;
@@ -190,10 +188,8 @@ export default function Penumpang() {
         }
         if (filterStartDate) filtered = filtered.filter(p => new Date(p.tanggal) >= new Date(filterStartDate));
         if (filterEndDate) filtered = filtered.filter(p => new Date(p.tanggal) <= new Date(filterEndDate));
-        if (filterStartTime) filtered = filtered.filter(p => new Date(p.tanggal).toTimeString().split(' ')[0] >= filterStartTime);
-        if (filterEndTime) filtered = filtered.filter(p => new Date(p.tanggal).toTimeString().split(' ')[0] <= filterEndTime);
         return filtered;
-    }, [penumpang, debouncedSearchTerm, filterStartDate, filterEndDate, filterStartTime, filterEndTime]);
+    }, [penumpang, debouncedSearchTerm, filterStartDate, filterEndDate]);
 
     const paginatedData = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
@@ -318,7 +314,7 @@ export default function Penumpang() {
                     <button onClick={() => handleModalOpen("add")} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center"><IconPlus className="w-5 h-5 mr-2" />Tambah Data</button>
                     <button onClick={handleExportCSV} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center"><IconDownload className="w-5 h-5 mr-2" />{selectedCount > 0 ? `Export Selected (${selectedCount})` : 'Export All to CSV'}</button>
                     {isPdfReady && (
-                        <PDFDownloadLink document={<PdfDocument data={filteredPenumpang} />} fileName="penumpang.pdf" className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center">
+                        <PDFDownloadLink key={`${filterStartDate}-${filterEndDate}-${debouncedSearchTerm}`} document={<PdfDocument data={filteredPenumpang} />} fileName="penumpang.pdf" className="bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center">
                             {({ loading }) => loading ? 'Loading document...' : <><IconDownload className="w-5 h-5 mr-2" />Export to PDF</>}
                         </PDFDownloadLink>
                     )}
@@ -328,11 +324,9 @@ export default function Penumpang() {
                     <IconSearch className="w-5 h-5 inline-block mr-2" />
                     <input type="text" placeholder="Cari nama data penumpang..." className="w-full px-3 py-2 rounded focus:outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
-                <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div><label className="block text-gray-700 mb-1">Dari Tanggal</label><input type="date" className="w-full px-3 py-2 border rounded" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} /></div>
                     <div><label className="block text-gray-700 mb-1">Sampai Tanggal</label><input type="date" className="w-full px-3 py-2 border rounded" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} /></div>
-                    <div><label className="block text-gray-700 mb-1">Dari Jam</label><input type="time" className="w-full px-3 py-2 border rounded" value={filterStartTime} onChange={(e) => setFilterStartTime(e.target.value)} /></div>
-                    <div><label className="block text-gray-700 mb-1">Sampai Jam</label><input type="time" className="w-full px-3 py-2 border rounded" value={filterEndTime} onChange={(e) => setFilterEndTime(e.target.value)} /></div>
                 </div>
                 <div className="mb-4 flex justify-between items-center">
                     <div className="text-sm text-gray-600">Menampilkan {Math.min(itemsPerPage, paginatedData.length)} dari {filteredPenumpang.length} data</div>
