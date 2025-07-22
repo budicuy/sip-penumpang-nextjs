@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@/app/generated/prisma'; // Pastikan path ini benar
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 const JWT_EXPIRATION_TIME = '1h'; // Durasi token: 1 jam

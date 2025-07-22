@@ -1,4 +1,4 @@
-import { PrismaClient } from '../app/generated/prisma';
+import { PrismaClient } from "@prisma/client";
 import { faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
@@ -6,8 +6,11 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Start seeding ...');
 
+  // Delete existing data
+  await prisma.penumpang.deleteMany();
+
   const penumpangData = [];
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < 20000; i++) {
     const jenisKelamin = faker.helpers.arrayElement(['L', 'P']);
     penumpangData.push({
       nama: faker.person.firstName(),
