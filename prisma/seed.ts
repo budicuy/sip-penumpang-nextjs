@@ -1,68 +1,28 @@
-
 import { PrismaClient, JenisKelamin } from '../app/generated/prisma';
+import { faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Start seeding ...');
 
-  const penumpangData = [
-    {
-      nama: 'Budi Santoso',
-      usia: 35,
-      jenisKelamin: JenisKelamin.L,
-      tujuan: 'Pel Tarjun',
-      tanggal: new Date('2025-07-23T10:00:00Z'),
-      nopol: 'DA 1234 ABC',
-      jenisKendaraan: 'Toyota Avanza',
-      golongan: 'IVa',
-      kapal: 'KMF Stagen',
-    },
-    {
-      nama: 'Siti Aminah',
-      usia: 28,
-      jenisKelamin: JenisKelamin.P,
-      tujuan: 'Pel Stagen',
-      tanggal: new Date('2025-07-23T10:15:00Z'),
-      nopol: 'KH 5678 DEF',
-      jenisKendaraan: 'Honda Scoopy',
-      golongan: 'II',
-      kapal: 'KMF Tarjun',
-    },
-    {
-      nama: 'Joko Susilo',
-      usia: 45,
-      jenisKelamin: JenisKelamin.L,
-      tujuan: 'Pel Tarjun',
-      tanggal: new Date('2025-07-24T11:00:00Z'),
-      nopol: 'B 9012 GHI',
-      jenisKendaraan: 'Mitsubishi Pajero',
-      golongan: 'IVb',
-      kapal: 'KMF Benua Raya',
-    },
-    {
-      nama: 'Dewi Lestari',
-      usia: 22,
-      jenisKelamin: JenisKelamin.P,
-      tujuan: 'Pel Stagen',
-      tanggal: new Date('2025-07-24T11:30:00Z'),
-      nopol: 'AG 3456 JKL',
-      jenisKendaraan: 'Yamaha NMAX',
-      golongan: 'II',
-      kapal: 'KMF Stagen',
-    },
-    {
-        nama: 'Ahmad Yani',
-        usia: 52,
-        jenisKelamin: JenisKelamin.L,
-        tujuan: 'Pel Tarjun',
-        tanggal: new Date('2025-07-25T09:00:00Z'),
-        nopol: 'D 7890 MNO',
-        jenisKendaraan: 'Truk Fuso',
-        golongan: 'V',
-        kapal: 'KMF Tarjun',
-    }
-  ];
+  await prisma.penumpang.deleteMany({});
+
+  const penumpangData = [];
+  for (let i = 0; i < 200; i++) {
+    const jenisKelamin = faker.helpers.arrayElement([JenisKelamin.L, JenisKelamin.P]);
+    penumpangData.push({
+      nama: faker.person.fullName(),
+      usia: faker.number.int({ min: 1, max: 80 }),
+      jenisKelamin: jenisKelamin,
+      tujuan: faker.helpers.arrayElement(['Pel Tarjun', 'Pel Stagen']),
+      tanggal: faker.date.between({ from: '2024-01-01T00:00:00.000Z', to: '2025-12-31T00:00:00.000Z' }),
+      nopol: faker.vehicle.vrm(),
+      jenisKendaraan: faker.vehicle.vehicle(),
+      golongan: faker.helpers.arrayElement(['I', 'II', 'III', 'IVa', 'IVb', 'V', 'VI', 'VII', 'VIII', 'IX']),
+      kapal: faker.helpers.arrayElement(['KMF Stagen', 'KMF Tarjun', 'KMF Benua Raya']),
+    });
+  }
 
   for (const p of penumpangData) {
     const penumpang = await prisma.penumpang.create({
