@@ -200,7 +200,7 @@ export async function POST(request: Request) {
             tanggal: validateDateInput(body.tanggal) || new Date(),
             nopol: String(body.nopol).trim().toUpperCase().substring(0, 12),
             jenisKendaraan: String(body.jenisKendaraan).trim().substring(0, 50),
-            golongan: String(body.golongan).trim().substring(0, 10),
+            golongan: ['I', 'II', 'III', 'IVa', 'IVb', 'V', 'VI', 'VII', 'VIII', 'IX'].includes(body.golongan) ? body.golongan : 'I',
             kapal: String(body.kapal).trim().substring(0, 50),
         };
 
