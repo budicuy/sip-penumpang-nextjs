@@ -19,8 +19,12 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            await axios.post('/api/auth/login', { email, password });
-            router.push('/dashboard');
+            const response = await axios.post('/api/auth/login', { email, password });
+            if (response.data.success) {
+                router.push('/dashboard');
+            } else {
+                setError(response.data.error || 'Login gagal');
+            }
         } catch (error) {
             const axiosError = error as AxiosError<{ error: string }>;
             setError(axiosError.response?.data?.error || 'Login gagal');
@@ -28,6 +32,7 @@ export default function LoginPage() {
             setLoading(false);
         }
     };
+
 
     return (
         <div className='bg-gradient-to-br from-white to-blue-400'>

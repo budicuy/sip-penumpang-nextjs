@@ -18,8 +18,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const logout = async () => {
     try {
-      await axios.get('/api/auth/logout');
-      router.push('/login');
+      const response = await axios.get('/api/auth/logout');
+      // jika sukses, redirect ke halaman login
+      if (response.data.success) {
+        router.push('/login');
+      }
+
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.log(error.message);

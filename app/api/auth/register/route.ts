@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 const userSchema = z.object({
   name: z.string().min(3, { message: "Nama harus memiliki setidaknya 3 karakter" }),
-  email: z.string().email({ message: "Format email tidak valid" }),
+  email: z.email({ message: "Email tidak valid" }),
   password: z.string().min(8, { message: "Password harus memiliki setidaknya 8 karakter" }),
 });
 

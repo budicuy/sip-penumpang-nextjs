@@ -10,7 +10,7 @@ async function main() {
   await prisma.penumpang.deleteMany();
 
   const penumpangData = [];
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < 1000; i++) {
     const jenisKelamin = faker.helpers.arrayElement(['L', 'P']);
     penumpangData.push({
       nama: faker.person.firstName(),
@@ -29,8 +29,9 @@ async function main() {
     const penumpang = await prisma.penumpang.create({
       data: p,
     });
-    console.log(`Created penumpang with id: ${penumpang.id}`);
+    console.log(`Created penumpang with ID: ${penumpang.id}` + ` - ${penumpang.nama}`);
   }
+
 
   console.log('Seeding finished.');
 }
