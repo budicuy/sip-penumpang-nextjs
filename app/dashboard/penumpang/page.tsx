@@ -12,7 +12,6 @@ interface Penumpang {
     jenisKelamin: string;
     tujuan: string;
     tanggal: string;
-    jam: string;
     nopol: string;
     jenisKendaraan: string;
     golongan: string;
@@ -41,25 +40,24 @@ const TableRow = memo(({
     onView: (item: Penumpang) => void;
 }) => (
     <tr className={`hover:bg-gray-100 border-b border-gray-200 ${isSelected ? 'bg-blue-100' : ''}`}>
-        <td className="px-6 py-4 whitespace-nowrap">
+        <td className="px-6 py-4 whitespace-nowrap text-center">
             <input
                 type="checkbox"
                 checked={isSelected}
                 onChange={() => onSelect(item.id)}
             />
         </td>
-        <td className="px-6 py-4 whitespace-nowrap">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-center">{(currentPage - 1) * itemsPerPage + index + 1}</td>
         <td className="px-6 py-4 whitespace-nowrap">{item.nama}</td>
         <td className="px-6 py-4 whitespace-nowrap">{item.usia}</td>
-        <td className="px-6 py-4 whitespace-nowrap">{item.jenisKelamin}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-center">{item.jenisKelamin}</td>
         <td className="px-6 py-4 whitespace-nowrap">{item.tujuan}</td>
         <td className="px-6 py-4 whitespace-nowrap">{new Date(item.tanggal).toLocaleDateString()}</td>
-        <td className="px-6 py-4 whitespace-nowrap">{new Date(item.jam).toLocaleTimeString()}</td>
         <td className="px-6 py-4 whitespace-nowrap">{item.nopol}</td>
         <td className="px-6 py-4 whitespace-nowrap">{item.jenisKendaraan}</td>
-        <td className="px-6 py-4 whitespace-nowrap">{item.golongan}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-center">{item.golongan}</td>
         <td className="px-6 py-4 whitespace-nowrap">{item.kapal}</td>
-        <td className="px-6 py-4 whitespace-nowrap flex items-center space-x-1">
+        <td className="px-6 py-4 whitespace-nowrap flex items-center justify-center space-x-1">
             <button onClick={() => onEdit(item)} className="text-blue-600 hover:text-blue-800 p-2 bg-blue-100 rounded"><IconEdit className="w-4 h-4" /></button>
             <button onClick={() => onDelete(item.id)} className="text-red-600 hover:text-red-800 p-2 bg-red-100 rounded"><IconTrash className="w-4 h-4" /></button>
             <button onClick={() => onView(item)} className="text-green-600 hover:text-green-800 p-2 bg-green-100 rounded"><IconEye className="w-4 h-4" /></button>
@@ -73,20 +71,19 @@ const PenumpangTable = memo(({ paginatedData, isLoading, selectedRows, allChecke
     <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
             <thead>
-                <tr className="bg-blue-600 text-white">
-                    <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider"><input type="checkbox" onChange={onSelectAll} checked={allChecked} /></th>
-                    <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">No</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Nama</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Usia</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Jenis Kelamin</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Tujuan</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Tanggal</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Jam</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">No. Polisi</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Jenis Kendaraan</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Golongan</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Kapal</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Aksi</th>
+                <tr className="bg-blue-600 text-white text-center">
+                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider"><input type="checkbox" onChange={onSelectAll} checked={allChecked} /></th>
+                    <th className="px-6 py-3  text-xs font-bold uppercase tracking-wider">No</th>
+                    <th className="px-6 py-3  text-xs font-bold uppercase tracking-wider">Nama</th>
+                    <th className="px-6 py-3  text-xs font-bold uppercase tracking-wider">Usia</th>
+                    <th className="px-6 py-3  text-xs font-bold uppercase tracking-wider">Jenis Kelamin</th>
+                    <th className="px-6 py-3  text-xs font-bold uppercase tracking-wider">Tujuan</th>
+                    <th className="px-6 py-3  text-xs font-bold uppercase tracking-wider">Tanggal</th>
+                    <th className="px-6 py-3  text-xs font-bold uppercase tracking-wider">No. Polisi</th>
+                    <th className="px-6 py-3  text-xs font-bold uppercase tracking-wider">Jenis Kendaraan</th>
+                    <th className="px-6 py-3  text-xs font-bold uppercase tracking-wider">Golongan</th>
+                    <th className="px-6 py-3  text-xs font-bold uppercase tracking-wider">Kapal</th>
+                    <th className="px-6 py-3  text-xs font-bold uppercase tracking-wider">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -121,7 +118,6 @@ const PenumpangModal = memo(({ isModalOpen, modalType, isSubmitting, selectedPen
                         <p><strong>Jenis Kelamin:</strong> {selectedPenumpang?.jenisKelamin}</p>
                         <p><strong>Tujuan:</strong> {selectedPenumpang?.tujuan}</p>
                         <p><strong>Tanggal:</strong> {selectedPenumpang?.tanggal ? new Date(selectedPenumpang.tanggal).toLocaleDateString() : ""}</p>
-                        <p><strong>Jam:</strong> {selectedPenumpang?.jam ? new Date(selectedPenumpang.jam).toLocaleTimeString() : ""}</p>
                         <p><strong>No. Polisi:</strong> {selectedPenumpang?.nopol}</p>
                         <p><strong>Jenis Kendaraan:</strong> {selectedPenumpang?.jenisKendaraan}</p>
                         <p><strong>Golongan:</strong> {selectedPenumpang?.golongan}</p>
@@ -132,10 +128,9 @@ const PenumpangModal = memo(({ isModalOpen, modalType, isSubmitting, selectedPen
                     <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="mb-4"><label className="block text-gray-700">Nama</label><input type="text" name="nama" defaultValue={selectedPenumpang?.nama} className="w-full px-3 py-2 border rounded" required /></div>
                         <div className="mb-4"><label className="block text-gray-700">Usia</label><input type="number" name="usia" defaultValue={selectedPenumpang?.usia} className="w-full px-3 py-2 border rounded" required /></div>
-                        <div className="mb-4"><label className="block text-gray-700">Jenis Kelamin</label><select name="jenisKelamin" defaultValue={selectedPenumpang?.jenisKelamin} className="w-full px-3 py-2 border rounded" required><option value="LakiLaki">Laki-laki</option><option value="Perempuan">Perempuan</option></select></div>
+                        <div className="mb-4"><label className="block text-gray-700">Jenis Kelamin</label><select name="jenisKelamin" defaultValue={selectedPenumpang?.jenisKelamin} className="w-full px-3 py-2 border rounded" required><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></div>
                         <div className="mb-4"><label className="block text-gray-700">Tujuan</label><select name="tujuan" defaultValue={selectedPenumpang?.tujuan} className="w-full px-3 py-2 border rounded" required><option value="Pel Tarjun">Pel Tarjun</option><option value="Pel Stagen">Pel Stagen</option></select></div>
                         <div className="mb-4"><label className="block text-gray-700">Tanggal</label><input type="date" name="tanggal" defaultValue={selectedPenumpang?.tanggal ? new Date(selectedPenumpang.tanggal).toISOString().split("T")[0] : ""} className="w-full px-3 py-2 border rounded" required /></div>
-                        <div className="mb-4"><label className="block text-gray-700">Jam</label><input type="time" name="jam" defaultValue={selectedPenumpang?.jam ? new Date(selectedPenumpang.jam).toTimeString().split(" ")[0] : ""} className="w-full px-3 py-2 border rounded" required /></div>
                         <div className="mb-4"><label className="block text-gray-700">No. Polisi</label><input type="text" name="nopol" defaultValue={selectedPenumpang?.nopol} className="w-full px-3 py-2 border rounded" required /></div>
                         <div className="mb-4"><label className="block text-gray-700">Jenis Kendaraan</label><input type="text" name="jenisKendaraan" defaultValue={selectedPenumpang?.jenisKendaraan} className="w-full px-3 py-2 border rounded" required /></div>
                         <div className="mb-4"><label className="block text-gray-700">Golongan</label><select name="golongan" defaultValue={selectedPenumpang?.golongan} className="w-full px-3 py-2 border rounded" required><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IVa">IVa</option><option value="IVb">IVb</option><option value="V">V</option><option value="VI">VI</option><option value="VII">VII</option><option value="VIII">VIII</option><option value="IX">IX</option></select></div>
@@ -195,8 +190,8 @@ export default function Penumpang() {
         }
         if (filterStartDate) filtered = filtered.filter(p => new Date(p.tanggal) >= new Date(filterStartDate));
         if (filterEndDate) filtered = filtered.filter(p => new Date(p.tanggal) <= new Date(filterEndDate));
-        if (filterStartTime) filtered = filtered.filter(p => new Date(p.jam).toTimeString().split(' ')[0] >= filterStartTime);
-        if (filterEndTime) filtered = filtered.filter(p => new Date(p.jam).toTimeString().split(' ')[0] <= filterEndTime);
+        if (filterStartTime) filtered = filtered.filter(p => new Date(p.tanggal).toTimeString().split(' ')[0] >= filterStartTime);
+        if (filterEndTime) filtered = filtered.filter(p => new Date(p.tanggal).toTimeString().split(' ')[0] <= filterEndTime);
         return filtered;
     }, [penumpang, debouncedSearchTerm, filterStartDate, filterEndDate, filterStartTime, filterEndTime]);
 
@@ -237,7 +232,7 @@ export default function Penumpang() {
         setIsSubmitting(true);
         const formData = new FormData(e.currentTarget);
         const rawData = Object.fromEntries(formData.entries());
-        const data = { ...rawData, usia: Number(rawData.usia), tanggal: new Date(rawData.tanggal as string).toISOString(), jam: new Date(`${rawData.tanggal as string}T${rawData.jam as string}`).toISOString() };
+        const data = { ...rawData, usia: Number(rawData.usia), tanggal: new Date(rawData.tanggal as string).toISOString() };
 
         try {
             if (modalType === "add") {

@@ -25,8 +25,8 @@ model User {
 }
 
 enum JenisKelamin {
-  LakiLaki
-  Perempuan
+  L
+  P
 }
 
 model Penumpang {
@@ -36,7 +36,6 @@ model Penumpang {
   jenisKelamin   JenisKelamin
   tujuan         String // Opsi tujuan 1. Pel Tarjun, 2. Pel Stagen
   tanggal        DateTime // tanggal, format YYYY-MM-DD contoh "2023-10-01"
-  jam            DateTime // jam , format HH:MM contoh "14:30 WIB"
   nopol          String // nomor polisi kendaraan, maksimal 15 karakter contoh "AB 1234 CD"
   jenisKendaraan String // jenis kendaraan, maksimal 255 karakter contoh "Avanza", "Toyota", "Civic"
   golongan       String // golongan kendaraan, maksimal 10 karakter buat opsi "I", "II", "III", "IVa", "IVb", "V", "VI", "VII", "VIII", "IX"

@@ -85,7 +85,6 @@ interface Penumpang {
     jenisKelamin: string;
     tujuan: string;
     tanggal: string;
-    jam: string;
     nopol: string;
     jenisKendaraan: string;
     golongan: string;
@@ -109,7 +108,6 @@ const PdfDocument: React.FC<PdfDocumentProps> = ({ data }) => (
                     <Text style={[styles.tableColHeader, styles.col4]}>JK</Text>
                     <Text style={[styles.tableColHeader, styles.col5]}>Tujuan</Text>
                     <Text style={[styles.tableColHeader, styles.col6]}>Tanggal</Text>
-                    <Text style={[styles.tableColHeader, styles.col7]}>Jam</Text>
                     <Text style={[styles.tableColHeader, styles.col8]}>Nopol</Text>
                     <Text style={[styles.tableColHeader, styles.col9]}>Jenis Kendaraan</Text>
                     <Text style={[styles.tableColHeader, styles.col10]}>Golongan</Text>
@@ -124,9 +122,6 @@ const PdfDocument: React.FC<PdfDocumentProps> = ({ data }) => (
                         <Text style={[styles.tableCol, styles.col5]}>{item.tujuan}</Text>
                         <Text style={[styles.tableCol, styles.col6]}>
                             {new Date(item.tanggal).toLocaleDateString('id-ID')}
-                        </Text>
-                        <Text style={[styles.tableCol, styles.col7]}>
-                            {new Date(item.jam).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                         </Text>
                         <Text style={[styles.tableCol, styles.col8]}>{item.nopol}</Text>
                         <Text style={[styles.tableCol, styles.col9]}>{item.jenisKendaraan}</Text>
