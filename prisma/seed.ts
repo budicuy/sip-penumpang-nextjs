@@ -6,13 +6,11 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Start seeding ...');
 
-  await prisma.penumpang.deleteMany({});
-
   const penumpangData = [];
   for (let i = 0; i < 200; i++) {
     const jenisKelamin = faker.helpers.arrayElement([JenisKelamin.L, JenisKelamin.P]);
     penumpangData.push({
-      nama: faker.person.fullName(),
+      nama: faker.person.firstName(),
       usia: faker.number.int({ min: 1, max: 80 }),
       jenisKelamin: jenisKelamin,
       tujuan: faker.helpers.arrayElement(['Pel Tarjun', 'Pel Stagen']),

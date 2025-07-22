@@ -26,6 +26,7 @@ const styles = StyleSheet.create({
     },
     tableRow: {
         flexDirection: "row",
+        minHeight: 20,
     },
     tableColHeader: {
         borderStyle: "solid",
@@ -37,8 +38,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 6,
         backgroundColor: 'yellow',
-        breakWords: false,
-        overflow: 'hidden',
     },
     tableCol: {
         borderStyle: "solid",
@@ -47,14 +46,15 @@ const styles = StyleSheet.create({
         borderTopWidth: 0,
         padding: 5,
         fontSize: 6,
-        breakWords: false,
-        overflow: 'hidden',
     },
     col1: {
         width: "5%",
         textAlign: 'center',
     },
-    col2: { width: "15%", },
+    col2: {
+        width: "15%",
+        lineHeight: 1.2,
+    },
     col3: {
         width: "6%",
         textAlign: 'center',
@@ -124,6 +124,26 @@ const chunkArray = <T,>(array: T[], size: number): T[][] => {
     return chunks;
 };
 
+const wrapText = (text: string, maxLength: number = 12): string => {
+    if (text.length <= maxLength) return text;
+
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+
+    words.forEach(word => {
+        if ((currentLine + word).length <= maxLength) {
+            currentLine += (currentLine ? ' ' : '') + word;
+        } else {
+            if (currentLine) lines.push(currentLine);
+            currentLine = word;
+        }
+    });
+
+    if (currentLine) lines.push(currentLine);
+    return lines.join('\n');
+};
+
 const formatDateTime = () => {
     const now = new Date();
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -182,7 +202,7 @@ const PdfDocument: React.FC<PdfDocumentProps> = ({ data }) => {
                         {chunk.map((item, index) => (
                             <View style={styles.tableRow} key={item.id}>
                                 <Text style={[styles.tableCol, styles.col1]}>{pageIndex * itemsPerPage + index + 1}</Text>
-                                <Text style={[styles.tableCol, styles.col2]}>{item.nama}</Text>
+                                <Text style={[styles.tableCol, styles.col2]}>{wrapText(item.nama)}</Text>
                                 <Text style={[styles.tableCol, styles.col3]}>{item.usia}</Text>
                                 <Text style={[styles.tableCol, styles.col4]}>{item.jenisKelamin.charAt(0).toUpperCase()}</Text>
                                 <Text style={[styles.tableCol, styles.col5]}>{item.tujuan}</Text>
