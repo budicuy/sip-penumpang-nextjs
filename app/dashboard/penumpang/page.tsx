@@ -6,7 +6,6 @@ import Papa from "papaparse";
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-// Fungsi untuk membuat PDF
 const generatePDFWithJsPDF = (data: Penumpang[]) => {
     const doc = new jsPDF({
         orientation: 'landscape',
@@ -18,6 +17,8 @@ const generatePDFWithJsPDF = (data: Penumpang[]) => {
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold');
         doc.text('MANIFEST DATA PENUMPANG', 148, 20, { align: 'center' });
+        // doc.setLineWidth(0.5);
+        // doc.line(10, 24, 287, 24); // Garis horizontal
 
         const now = new Date();
         const options: Intl.DateTimeFormatOptions = {
@@ -35,6 +36,7 @@ const generatePDFWithJsPDF = (data: Penumpang[]) => {
         doc.text(dateStr, 280, 35, { align: 'right' });
     };
 
+    // Header halaman pertama
     addHeader();
 
     const tableData = data.map((item, index) => [
@@ -50,65 +52,79 @@ const generatePDFWithJsPDF = (data: Penumpang[]) => {
         item.kapal || '-'
     ]);
 
-    const totalColumnWidth = 15 + 45 + 15 + 12 + 30 + 25 + 28 + 45 + 15 + 45;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const leftMargin = (pageWidth - totalColumnWidth) / 2;
+    // Perlebar kolom untuk memanfaatkan ruang landscape
+    const totalColumnWidth = 15 + 45 + 15 + 12 + 30 + 25 + 28 + 45 + 15 + 45; // = 275mm
+    const pageWidth = doc.internal.pageSize.getWidth(); // 297mm
+    const leftMargin = (pageWidth - totalColumnWidth) / 2; // Centering
 
     autoTable(doc, {
         head: [['No', 'Nama', 'Usia', 'JK', 'Tujuan', 'Tanggal', 'Nopol', 'Jenis Kendaraan', 'Gol', 'Kapal']],
         body: tableData,
         startY: 40,
-        showHead: 'everyPage',
+        showHead: 'everyPage', // Header di setiap halaman
         styles: {
-            fontSize: 8,
+            fontSize: 8, // Slightly bigger font
             cellPadding: 2,
             overflow: 'linebreak',
             cellWidth: 'wrap',
             halign: 'center'
         },
         headStyles: {
-            fillColor: "blue",
+            fillColor: "blue", // Dark blue header
             textColor: "white",
             fontStyle: 'bold',
             halign: 'center',
             fontSize: 8
         },
         alternateRowStyles: {
-            fillColor: [240, 248, 255],
+            fillColor: [240, 248, 255], // Light blue for alternate rows
         },
         columnStyles: {
-            0: { cellWidth: 15, halign: 'center' },
-            1: { cellWidth: 45, halign: 'center' },
-            2: { cellWidth: 15, halign: 'center' },
-            3: { cellWidth: 12, halign: 'center' },
-            4: { cellWidth: 30, halign: 'center' },
-            5: { cellWidth: 25, halign: 'center' },
-            6: { cellWidth: 28, halign: 'center' },
-            7: { cellWidth: 45, halign: 'center' },
-            8: { cellWidth: 15, halign: 'center' },
-            9: { cellWidth: 45, halign: 'center' }
+            0: { cellWidth: 15, halign: 'center' },    // No - lebih besar
+            1: { cellWidth: 45, halign: 'center' },    // Nama - lebih besar
+            2: { cellWidth: 15, halign: 'center' },    // Usia 
+            3: { cellWidth: 12, halign: 'center' },    // JK
+            4: { cellWidth: 30, halign: 'center' },    // Tujuan - lebih besar
+            5: { cellWidth: 25, halign: 'center' },    // Tanggal
+            6: { cellWidth: 28, halign: 'center' },    // Nopol - lebih besar
+            7: { cellWidth: 45, halign: 'center' },    // Jenis Kendaraan - lebih besar
+            8: { cellWidth: 15, halign: 'center' },    // Golongan
+            9: { cellWidth: 45, halign: 'center' }     // Kapal - lebih besar
         },
         margin: {
             top: 40,
             left: Math.max(10, leftMargin),
             right: Math.max(10, leftMargin),
-            bottom: 30
+            bottom: 30 // Space untuk footer
         },
         theme: 'grid',
         didDrawPage: (data) => {
+            // Tambahkan header di setiap halaman baru
             if (data.pageNumber > 1) {
                 addHeader();
             }
         }
     });
 
+    // Dapatkan posisi Y terakhir dari tabel
     const finalY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
-    const signatureHeight = 35;
+
+    // Tinggi yang dibutuhkan untuk tanda tangan (termasuk margin)
+    const signatureHeight = 35; // 25mm untuk tanda tangan + 10mm margin
     const pageHeight = doc.internal.pageSize.getHeight();
-    const bottomMargin = 30;
+    const bottomMargin = 30; // Margin bawah halaman
+
+    // Cek apakah ada cukup ruang untuk tanda tangan di halaman saat ini
     const availableSpace = pageHeight - finalY - bottomMargin;
 
-    const addSignatures = (signatureY: number) => {
+    // Jika tidak cukup ruang, tambahkan halaman baru
+    if (availableSpace < signatureHeight) {
+        doc.addPage();
+        addHeader(); // Tambahkan header di halaman baru
+
+        // Set posisi Y untuk tanda tangan di halaman baru
+        const signatureY = 60; // Posisi Y di halaman baru (setelah header)
+
         doc.setFontSize(12);
         const pageWidthForSignature = doc.internal.pageSize.getWidth();
         const leftSignature = pageWidthForSignature * 0.25;
@@ -118,16 +134,22 @@ const generatePDFWithJsPDF = (data: Penumpang[]) => {
         doc.text('Nahkoda', rightSignature, signatureY, { align: 'center' });
         doc.text('(...............................)', leftSignature, signatureY + 25, { align: 'center' });
         doc.text('(...............................)', rightSignature, signatureY + 25, { align: 'center' });
-    };
-
-    if (availableSpace < signatureHeight) {
-        doc.addPage();
-        addHeader();
-        addSignatures(60);
     } else {
-        addSignatures(finalY + 25);
+        // Ada cukup ruang di halaman saat ini
+        const signatureY = finalY + 25;
+
+        doc.setFontSize(12);
+        const pageWidthForSignature = doc.internal.pageSize.getWidth();
+        const leftSignature = pageWidthForSignature * 0.25;
+        const rightSignature = pageWidthForSignature * 0.75;
+
+        doc.text('Petugas', leftSignature, signatureY, { align: 'center' });
+        doc.text('Nahkoda', rightSignature, signatureY, { align: 'center' });
+        doc.text('(...............................)', leftSignature, signatureY + 25, { align: 'center' });
+        doc.text('(...............................)', rightSignature, signatureY + 25, { align: 'center' });
     }
 
+    // Tambahkan nomor halaman di semua halaman
     const addFooter = () => {
         const pageCount = doc.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
@@ -139,12 +161,12 @@ const generatePDFWithJsPDF = (data: Penumpang[]) => {
     };
 
     addFooter();
+
     doc.save(`penumpang_${new Date().toISOString().split('T')[0]}.pdf`);
 };
 
-// Interface Penumpang dengan id sebagai number
 interface Penumpang {
-    id: number; // DIUBAH: dari string ke number
+    id: string;
     nama: string;
     usia: number;
     jenisKelamin: string;
@@ -156,23 +178,21 @@ interface Penumpang {
     kapal: string;
 }
 
-// Konstanta
 const SEARCH_DEBOUNCE_MS = 500;
 const TUJUAN_OPTIONS = ["Pel Tarjun", "Pel Stagen"];
 const GOLONGAN_OPTIONS = ["I", "II", "III", "IVa", "IVb", "V", "VI", "VII", "VIII", "IX"];
 const KAPAL_OPTIONS = ["KMF Stagen", "KMF Tarjun", "KMF Benua Raya"];
 const ITEMS_PER_PAGE_OPTIONS = [50, 100, 200, 300, 500, 1000, 2000, 5000, 10000];
 
-// Komponen Baris Tabel
 const TableRow = memo(({ item, index, currentPage, itemsPerPage, isSelected, onSelect, onEdit, onDelete, onView }: {
     item: Penumpang;
     index: number;
     currentPage: number;
     itemsPerPage: number;
     isSelected: boolean;
-    onSelect: (id: number) => void; // DIUBAH: dari string ke number
+    onSelect: (id: string) => void;
     onEdit: (item: Penumpang) => void;
-    onDelete: (id: number) => void; // DIUBAH: dari string ke number
+    onDelete: (id: string) => void;
     onView: (item: Penumpang) => void;
 }) => (
     <tr
@@ -215,7 +235,6 @@ const TableRow = memo(({ item, index, currentPage, itemsPerPage, isSelected, onS
 ));
 TableRow.displayName = 'TableRow';
 
-// Komponen Tabel Penumpang
 const PenumpangTable = memo(({
     paginatedData,
     isLoading,
@@ -235,14 +254,14 @@ const PenumpangTable = memo(({
 }: {
     paginatedData: Penumpang[];
     isLoading: boolean;
-    selectedRows: Set<number>; // DIUBAH: dari Set<string> ke Set<number>
+    selectedRows: Set<string>;
     allChecked: boolean;
     currentPage: number;
     itemsPerPage: number;
     onSelectAll: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onSelectRow: (id: number) => void; // DIUBAH: dari string ke number
+    onSelectRow: (id: string) => void;
     onEdit: (item: Penumpang) => void;
-    onDelete: (id: number) => void; // DIUBAH: dari string ke number
+    onDelete: (id: string) => void;
     onView: (item: Penumpang) => void;
     searchTerm: string;
     filterStartDate: string;
@@ -326,7 +345,6 @@ const PenumpangTable = memo(({
 ));
 PenumpangTable.displayName = 'PenumpangTable';
 
-// Komponen Modal
 const PenumpangModal = memo(({ isModalOpen, modalType, isSubmitting, selectedPenumpang, onClose, onSubmit }: {
     isModalOpen: boolean;
     modalType: "add" | "edit" | "view";
@@ -424,7 +442,6 @@ const PenumpangModal = memo(({ isModalOpen, modalType, isSubmitting, selectedPen
 });
 PenumpangModal.displayName = 'PenumpangModal';
 
-// Komponen Dialog Konfirmasi
 const ConfirmDialog = memo(({ isOpen, title, message, onConfirm, onCancel, isProcessing }: {
     isOpen: boolean;
     title: string;
@@ -451,7 +468,6 @@ const ConfirmDialog = memo(({ isOpen, title, message, onConfirm, onCancel, isPro
 });
 ConfirmDialog.displayName = 'ConfirmDialog';
 
-// Komponen Utama
 export default function Penumpang() {
     const [penumpang, setPenumpang] = useState<Penumpang[]>([]);
     const [totalData, setTotalData] = useState(0);
@@ -460,7 +476,7 @@ export default function Penumpang() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalType, setModalType] = useState<"add" | "edit" | "view">("add");
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set()); // DIUBAH: dari Set<string> ke Set<number>
+    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [filterStartDate, setFilterStartDate] = useState("");
@@ -469,7 +485,7 @@ export default function Penumpang() {
     const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE_OPTIONS[0]);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; id: number | null; type: 'single' | 'multiple' }>({ isOpen: false, id: null, type: 'single' }); // DIUBAH: tipe state
+    const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, id: '', type: 'single' });
     const [isDeleting, setIsDeleting] = useState(false);
     const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -488,9 +504,10 @@ export default function Penumpang() {
         });
 
         try {
+            // Add timeout to abort controller
             const timeoutId = setTimeout(() => {
                 abortControllerRef.current?.abort();
-            }, 10000);
+            }, 10000); // 10 second timeout
 
             const response = await fetch(`/api/penumpang?${params.toString()}`, {
                 signal: abortControllerRef.current.signal,
@@ -503,33 +520,106 @@ export default function Penumpang() {
 
             if (!response.ok) {
                 let errorMessage = 'Gagal memuat data';
+
                 try {
                     const errorData = await response.json();
-                    errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+
+                    // Handle specific error codes from API
+                    switch (errorData.code) {
+                        case 'TIMEOUT':
+                            errorMessage = 'Request timeout. Coba kurangi filter pencarian atau coba lagi.';
+                            break;
+                        case 'QUERY_ERROR':
+                            errorMessage = 'Filter tidak valid. Periksa format tanggal atau kata kunci pencarian.';
+                            break;
+                        case 'DB_ERROR':
+                            errorMessage = 'Masalah koneksi database. Coba lagi dalam beberapa saat.';
+                            break;
+                        case 'SYNTAX_ERROR':
+                            errorMessage = 'Format request tidak valid. Refresh halaman dan coba lagi.';
+                            break;
+                        case 'INTERNAL_ERROR':
+                            errorMessage = 'Terjadi kesalahan server. Hubungi administrator jika masalah berlanjut.';
+                            break;
+                        default:
+                            errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+                    }
                 } catch {
-                    errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    // If error response is not JSON, use status-based messages
+                    switch (response.status) {
+                        case 400:
+                            errorMessage = 'Request tidak valid. Periksa filter pencarian Anda.';
+                            break;
+                        case 404:
+                            errorMessage = 'Endpoint API tidak ditemukan. Hubungi administrator.';
+                            break;
+                        case 500:
+                            errorMessage = 'Terjadi kesalahan server internal.';
+                            break;
+                        case 503:
+                            errorMessage = 'Layanan tidak tersedia. Coba lagi nanti.';
+                            break;
+                        case 504:
+                            errorMessage = 'Request timeout. Coba kurangi filter atau coba lagi.';
+                            break;
+                        default:
+                            errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
                 }
+
                 throw new Error(errorMessage);
             }
 
             const result = await response.json();
 
+            // Validate response structure
             if (result && typeof result === 'object' && 'data' in result && 'total' in result) {
-                const { data = [], total = 0 } = result;
+                const { data = [], total = 0, meta = {} } = result;
+
+                // Additional validation for data array
                 if (Array.isArray(data)) {
                     setPenumpang(data);
                     setTotalData(typeof total === 'number' ? total : 0);
+
+                    // Log success for debugging
+                    console.log('Data loaded successfully:', {
+                        count: data.length,
+                        total,
+                        page: currentPage,
+                        search: debouncedSearchTerm,
+                        meta
+                    });
                 } else {
-                    throw new Error('Format data tidak valid dari server.');
+                    console.error('Invalid data format - data is not an array:', data);
+                    setPenumpang([]);
+                    setTotalData(0);
+                    setError('Format data tidak valid dari server.');
                 }
             } else {
-                throw new Error('Format response tidak valid dari server.');
+                console.error('Invalid response format:', result);
+                setPenumpang([]);
+                setTotalData(0);
+                setError('Format response tidak valid dari server.');
             }
 
         } catch (err: unknown) {
             if (err instanceof Error && err.name !== 'AbortError') {
-                console.error("Fetch error details:", err);
+                console.error("Fetch error details:", {
+                    message: err.message,
+                    name: err.name,
+                    stack: err.stack,
+                    currentPage,
+                    itemsPerPage,
+                    searchTerm: debouncedSearchTerm,
+                    startDate: filterStartDate,
+                    endDate: filterEndDate,
+                    timestamp: new Date().toISOString()
+                });
+
+                // Set error message (already processed above)
                 setError(err.message);
+
+                // Set empty data on error
                 setPenumpang([]);
                 setTotalData(0);
             }
@@ -547,6 +637,7 @@ export default function Penumpang() {
 
     useEffect(() => {
         const timer = setTimeout(() => {
+            // Sanitize search term
             const sanitizedSearchTerm = searchTerm.trim().replace(/[<>]/g, '');
             setDebouncedSearchTerm(sanitizedSearchTerm);
             setCurrentPage(1);
@@ -579,9 +670,9 @@ export default function Penumpang() {
     const totalPages = Math.ceil(totalData / itemsPerPage);
     const selectedCount = selectedRows.size;
 
-    const handleModalOpen = useCallback((type: "add" | "edit" | "view", penumpangItem?: Penumpang) => {
+    const handleModalOpen = useCallback((type: "add" | "edit" | "view", penumpang?: Penumpang) => {
         setModalType(type);
-        setSelectedPenumpang(penumpangItem || null);
+        setSelectedPenumpang(penumpang || null);
         setIsModalOpen(true);
     }, []);
 
@@ -597,6 +688,16 @@ export default function Penumpang() {
 
         const formData = new FormData(e.currentTarget);
         const rawData = Object.fromEntries(formData.entries());
+
+        // Client-side validation
+        const requiredFields = ['nama', 'usia', 'jenisKelamin', 'tujuan', 'tanggal', 'nopol', 'jenisKendaraan', 'golongan', 'kapal'];
+        const missingFields = requiredFields.filter(field => !rawData[field]);
+
+        if (missingFields.length > 0) {
+            setError(`Field wajib tidak boleh kosong: ${missingFields.join(', ')}`);
+            setIsSubmitting(false);
+            return;
+        }
 
         const data = {
             ...rawData,
@@ -615,27 +716,74 @@ export default function Penumpang() {
 
             const response = await fetch(url, {
                 method,
-                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
                 body: JSON.stringify(data)
             });
 
             if (!response.ok) {
                 let errorMessage = `Gagal ${modalType === "add" ? "menambahkan" : "memperbarui"} data`;
+
                 try {
                     const errorData = await response.json();
-                    errorMessage = errorData.error || errorMessage;
+
+                    // Handle specific error codes from API
+                    switch (errorData.code) {
+                        case 'VALIDATION_ERROR':
+                            errorMessage = `Validasi gagal: ${errorData.error}`;
+                            break;
+                        case 'DUPLICATE_ERROR':
+                            errorMessage = 'Data dengan nomor polisi atau identitas yang sama sudah ada.';
+                            break;
+                        case 'CONSTRAINT_ERROR':
+                            errorMessage = 'Data tidak memenuhi persyaratan database.';
+                            break;
+                        case 'CREATE_ERROR':
+                            errorMessage = 'Gagal menyimpan data ke database.';
+                            break;
+                        default:
+                            errorMessage = errorData.error || errorMessage;
+                    }
                 } catch {
-                    // fallback
+                    // If error response is not JSON, use status-based messages
+                    switch (response.status) {
+                        case 400:
+                            errorMessage = 'Data yang dikirim tidak valid. Periksa input Anda.';
+                            break;
+                        case 409:
+                            errorMessage = 'Data sudah ada. Periksa nomor polisi atau data identitas lainnya.';
+                            break;
+                        case 422:
+                            errorMessage = 'Format data tidak sesuai. Periksa tanggal dan angka.';
+                            break;
+                        case 500:
+                            errorMessage = 'Terjadi kesalahan server. Coba lagi nanti.';
+                            break;
+                        default:
+                            errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
                 }
+
                 throw new Error(errorMessage);
             }
 
-            await response.json();
+            const result = await response.json();
+            console.log('Successfully saved:', result);
+
             await fetchPenumpang();
             handleModalClose();
             setSuccessMessage(`Data berhasil ${modalType === "add" ? "ditambahkan" : "diperbarui"}`);
 
         } catch (err: unknown) {
+            console.error('Submit error:', {
+                error: err,
+                data,
+                modalType,
+                selectedId: selectedPenumpang?.id
+            });
+
             if (err instanceof Error) {
                 setError(err.message);
             } else {
@@ -646,7 +794,7 @@ export default function Penumpang() {
         }
     };
 
-    const handleDelete = useCallback((id: number) => { // DIUBAH: dari string ke number
+    const handleDelete = useCallback((id: string) => {
         setConfirmDialog({ isOpen: true, id, type: 'single' });
     }, []);
 
@@ -655,9 +803,9 @@ export default function Penumpang() {
         setError(null);
 
         try {
-            if (confirmDialog.type === 'single' && confirmDialog.id !== null) {
+            if (confirmDialog.type === 'single') {
                 const response = await fetch(`/api/penumpang/${confirmDialog.id}`, { method: "DELETE" });
-                if (!response.ok) throw new Error('Gagal menghapus data tunggal');
+                if (!response.ok) throw new Error('Failed to delete');
                 setSuccessMessage("Data berhasil dihapus");
             } else {
                 const ids = Array.from(selectedRows);
@@ -675,10 +823,9 @@ export default function Penumpang() {
             }
 
             await fetchPenumpang();
-            setConfirmDialog({ isOpen: false, id: null, type: 'single' }); // DIUBAH: id ke null
-        } catch (err) {
-            setError("Gagal menghapus data. Coba lagi.");
-            console.error(err);
+            setConfirmDialog({ isOpen: false, id: '', type: 'single' });
+        } catch {
+            setError("Gagal menghapus data");
         } finally {
             setIsDeleting(false);
         }
@@ -692,7 +839,7 @@ export default function Penumpang() {
         }
     }, [penumpang]);
 
-    const handleSelectRow = useCallback((id: number) => { // DIUBAH: dari string ke number
+    const handleSelectRow = useCallback((id: string) => {
         setSelectedRows(prev => {
             const newSet = new Set(prev);
             if (newSet.has(id)) {
@@ -705,7 +852,7 @@ export default function Penumpang() {
     }, []);
 
     const handleDeleteSelected = () => {
-        setConfirmDialog({ isOpen: true, id: null, type: 'multiple' }); // DIUBAH: id ke null
+        setConfirmDialog({ isOpen: true, id: '', type: 'multiple' });
     };
 
     const handleExportCSV = useCallback(async () => {
@@ -715,7 +862,16 @@ export default function Penumpang() {
                 dataToExport = penumpang.filter(p => selectedRows.has(p.id));
             } else {
                 const response = await fetch(`/api/penumpang?limit=${Math.max(1000, totalData)}`);
-                if (!response.ok) throw new Error('Gagal mengambil semua data untuk export');
+                if (!response.ok) {
+                    let errorMessage = 'Gagal mengambil data untuk export';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorMessage;
+                    } catch {
+                        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorMessage);
+                }
                 const result = await response.json();
                 dataToExport = result.data || [];
             }
@@ -753,6 +909,7 @@ export default function Penumpang() {
             setSuccessMessage(`${dataToExport.length} data berhasil di-export ke CSV`);
 
         } catch (err: unknown) {
+            console.error('Export CSV error:', err);
             if (err instanceof Error) {
                 setError(`Export gagal: ${err.message}`);
             } else {
@@ -767,7 +924,7 @@ export default function Penumpang() {
         setFilterStartDate("");
         setFilterEndDate("");
         setCurrentPage(1);
-        setError(null);
+        setError(null); // Clear any existing errors
     }, []);
 
     const allChecked = penumpang.length > 0 && penumpang.every(item => selectedRows.has(item.id));
@@ -780,8 +937,16 @@ export default function Penumpang() {
 
             {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex items-center justify-between">
-                    <span>{error}</span>
-                    <button onClick={fetchPenumpang} className="ml-4 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
+                    <div className="flex items-center">
+                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path>
+                        </svg>
+                        <span>{error}</span>
+                    </div>
+                    <button
+                        onClick={fetchPenumpang}
+                        className="ml-4 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
+                    >
                         Coba Lagi
                     </button>
                 </div>
@@ -835,7 +1000,7 @@ export default function Penumpang() {
                         maxLength={100}
                     />
                     {isLoading && searchTerm && (
-                        <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                         </div>
                     )}
@@ -853,11 +1018,15 @@ export default function Penumpang() {
                 <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label htmlFor="filterStartDate" className="block text-gray-700 mb-1">Dari Tanggal</label>
-                        <input type="date" id="filterStartDate" className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} />
+                        <input type="date"
+                            placeholder="Pilih tanggal mulai"
+                            id="filterStartDate" className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} />
                     </div>
                     <div>
                         <label htmlFor="filterEndDate" className="block text-gray-700 mb-1">Sampai Tanggal</label>
-                        <input type="date" id="filterEndDate" className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} />
+                        <input type="date"
+                            placeholder="Pilih tanggal akhir"
+                            id="filterEndDate" className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} />
                     </div>
                     <div>
                         <label htmlFor="itemsPerPage" className="block text-gray-700 mb-1">Data per Halaman</label>
@@ -874,7 +1043,11 @@ export default function Penumpang() {
                     <div className="text-sm text-gray-600">
                         <div>
                             Menampilkan {penumpang.length} dari {totalData} data
-                            {selectedCount > 0 && <span className="ml-2 text-blue-600 font-medium">• {selectedCount} dipilih</span>}
+                            {selectedCount > 0 && (
+                                <span className="ml-2 text-blue-600 font-medium">
+                                    • {selectedCount} dipilih
+                                </span>
+                            )}
                         </div>
                         {(debouncedSearchTerm || filterStartDate || filterEndDate) && (
                             <div className="text-xs text-gray-500 mt-1">
@@ -883,17 +1056,20 @@ export default function Penumpang() {
                                 {filterEndDate && ` | Sampai: ${filterEndDate}`}
                             </div>
                         )}
+                        <div className="text-xs text-gray-500 mt-1">
+                            Tip: Klik baris untuk memilih/batal memilih data
+                        </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100">«</button>
-                        <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100">‹</button>
+                        <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100 transition-colors">«</button>
+                        <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100 transition-colors">‹</button>
                         <input type="number" value={currentPage} onChange={(e) => {
                             const page = parseInt(e.target.value) || 1;
                             setCurrentPage(Math.max(1, Math.min(page, totalPages)));
-                        }} className="w-16 px-2 py-1 border rounded text-center focus:ring-2 focus:ring-blue-500" min="1" max={totalPages} />
+                        }} className="w-16 px-2 py-1 border rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500" min="1" max={totalPages} />
                         <span className="px-2">/ {totalPages}</span>
-                        <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100">›</button>
-                        <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100">»</button>
+                        <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100 transition-colors">›</button>
+                        <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-100 transition-colors">»</button>
                     </div>
                 </div>
 
@@ -932,7 +1108,7 @@ export default function Penumpang() {
                     ? "Apakah Anda yakin ingin menghapus data ini?"
                     : `Apakah Anda yakin ingin menghapus ${selectedCount} data yang dipilih?`}
                 onConfirm={handleDeleteConfirm}
-                onCancel={() => setConfirmDialog({ isOpen: false, id: null, type: 'single' })} // DIUBAH: id ke null
+                onCancel={() => setConfirmDialog({ isOpen: false, id: '', type: 'single' })}
                 isProcessing={isDeleting}
             />
         </div>

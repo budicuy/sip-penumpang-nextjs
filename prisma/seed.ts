@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { faker } from '@faker-js/faker';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -37,17 +38,17 @@ async function main() {
     {
       name: 'Admin',
       email: 'admin@example.com',
-      password: 'password', // Pastikan untuk meng-hash password ini di aplikasi Anda
+      password: await bcrypt.hash('password', 10), // Pastikan untuk meng-hash password ini di aplikasi Anda
     },
     {
       name: 'User',
       email: 'user@example.com',
-      password: 'password', // Pastikan untuk meng-hash password ini di aplikasi Anda
+      password: await bcrypt.hash('password', 10), // Pastikan untuk meng-hash password ini di aplikasi Anda
     },
     {
       name: 'manager',
       email: 'manager@example.com',
-      password: 'password', // Pastikan untuk meng-hash password ini di aplikasi Anda
+      password: await bcrypt.hash('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
     }
   ];
 
