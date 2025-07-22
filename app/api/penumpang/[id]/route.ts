@@ -11,7 +11,7 @@ export async function GET(
     const { id } = await params;
     const penumpang = await prisma.penumpang.findUnique({
       where: {
-        id,
+        id: parseInt(id), // Ensure id is parsed as an integer
       },
     });
 
@@ -50,7 +50,7 @@ export async function PUT(
 
     const updatedPenumpang = await prisma.penumpang.update({
       where: {
-        id,
+        id: parseInt(id), // Ensure id is parsed as an integer
       },
       data: {
         nama,
@@ -83,7 +83,7 @@ export async function DELETE(
     const { id } = await params;
     await prisma.penumpang.delete({
       where: {
-        id,
+        id: parseInt(id), // Ensure id is parsed as an integer
       },
     });
 

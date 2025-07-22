@@ -182,7 +182,7 @@ const SEARCH_DEBOUNCE_MS = 500;
 const TUJUAN_OPTIONS = ["Pel Tarjun", "Pel Stagen"];
 const GOLONGAN_OPTIONS = ["I", "II", "III", "IVa", "IVb", "V", "VI", "VII", "VIII", "IX"];
 const KAPAL_OPTIONS = ["KMF Stagen", "KMF Tarjun", "KMF Benua Raya"];
-const ITEMS_PER_PAGE_OPTIONS = [50, 100, 200, 300, 500, 1000, 2000, 5000, 10000];
+const ITEMS_PER_PAGE_OPTIONS = [50, 100, 200, 300, 500];
 
 const TableRow = memo(({ item, index, currentPage, itemsPerPage, isSelected, onSelect, onEdit, onDelete, onView }: {
     item: Penumpang;
