@@ -44,7 +44,7 @@ model Penumpang {
   jenisKelamin   jenisKelamin
   tujuan         String       @db.VarChar(255)
   tanggal        DateTime     @db.Date
-  nopol          String       @db.VarChar(10)
+  nopol          String       @db.VarChar(15)
   jenisKendaraan String       @db.VarChar(255)
   golongan       golongan
   kapal          String       @db.VarChar(50)

@@ -11,6 +11,7 @@ export async function GET(
     const { id } = await params;
     const penumpang = await prisma.penumpang.findUnique({
       where: {
+
         id: parseInt(id), // Ensure id is parsed as an integer
       },
     });
