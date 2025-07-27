@@ -8,7 +8,7 @@ export default function Home() {
       <header className="sticky top-0 z-20 bg-gray-900/50 backdrop-blur-lg">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
           <h1 className="text-lg md:text-2xl font-bold font-quicksand">SIP-PENUMPANG</h1>
-          <nav className="space-x-4">
+          <nav className="s`pace-x-4">
             <Link href="/login" className="px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition-colors">
               Login
             </Link>
