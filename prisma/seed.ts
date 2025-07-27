@@ -15,15 +15,18 @@ async function main() {
     {
       name: 'Admin',
       email: 'admin@example.com',
+      role: role.ADMIN,
       password: await bcrypt.hash('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
     },
     {
       name: 'User',
       email: 'user@example.com',
+      role: role.USER,
       password: await bcrypt.hash('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
     },
     {
       name: 'manager',
+      role: role.MANAGER,
       email: 'manager@example.com',
       password: await bcrypt.hash('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
     }
@@ -58,36 +61,6 @@ async function main() {
     });
     console.log(`Created penumpang with ID: ${penumpang.id}` + ` - ${penumpang.nama}`);
   }
-
-
-  const userData = [
-    {
-      email: 'admin@example.com',
-      name: 'Admin',
-      role: role.ADMIN,
-      password: bcrypt.hashSync('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
-    },
-    {
-      name: 'User',
-      role: role.USER,
-      email: 'user@example.com',
-      password: bcrypt.hashSync('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
-    },
-    {
-      name: 'manager',
-      role: role.MANAGER,
-      email: 'manager@example.com',
-      password: bcrypt.hashSync('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
-    }
-  ];
-
-  for (const user of userData) {
-    const createdUser = await prisma.user.create({
-      data: user,
-    });
-    console.log(`Created user with ID: ${createdUser.id}` + ` - ${createdUser.name}`);
-  }
-  console.log('Seeding finished.');
 
 }
 
