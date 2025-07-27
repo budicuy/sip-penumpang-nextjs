@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "Penumpang" ALTER COLUMN "nopol" SET DATA TYPE VARCHAR(15);

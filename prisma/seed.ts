@@ -43,7 +43,6 @@ async function main() {
   for (let i = 0; i < 100; i++) {
     const jenisKelamin = faker.helpers.arrayElement(['L', 'P']);
     penumpangData.push({
-      userId: faker.string.uuid(),
       nama: faker.person.firstName(),
       usia: faker.number.int({ min: 1, max: 80 }),
       jenisKelamin: jenisKelamin,
