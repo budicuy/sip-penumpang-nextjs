@@ -13,6 +13,15 @@ export function middleware(request: NextRequest) {
   }
 
   if (!isPublicPath && !token) {
+    if (path.startsWith('/api/')) {
+      if (path.startsWith('/api/auth/register') || path.startsWith('/api/auth/login')) {
+        return NextResponse.next();
+      }
+      return new NextResponse(
+        JSON.stringify({ message: 'Akses tidak diizinkan' }),
+        { status: 401, headers: { 'content-type': 'application/json' } }
+      );
+    }
     return NextResponse.redirect(new URL('/login', request.nextUrl))
   }
     
@@ -22,6 +31,7 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/login',
-    '/register'
+    '/register',
+    '/api/:path*'
   ],
 }
