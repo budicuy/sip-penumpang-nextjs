@@ -21,16 +21,20 @@ const generatePDFWithJsPDF = (data: Penumpang[]) => {
         // doc.line(10, 24, 287, 24); // Garis horizontal
 
         const now = new Date();
-        const options: Intl.DateTimeFormatOptions = {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        };
-        const dateStr = `Tanggal: ${now.toLocaleDateString('id-ID', options)}`;
+        // const options: Intl.DateTimeFormatOptions = {
+        //     weekday: 'long',
+        //     year: 'numeric',
+        //     month: 'long',
+        //     day: 'numeric',
+        //     hour: '2-digit',
+        //     minute: '2-digit',
+        //     hour12: true
+        // };
+        // const dateStr = `Tanggal: ${now.toLocaleDateString('id-ID', options)}`;
+
+
+        // ubah ke wita
+        const dateStr = `Tanggal: ${now.toLocaleDateString('id-ID')} ${now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Makassar' })}`;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.text(dateStr, 280, 35, { align: 'right' });

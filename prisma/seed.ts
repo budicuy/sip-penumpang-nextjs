@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, role } from "@prisma/client";
 import { faker } from '@faker-js/faker';
 import bcrypt from 'bcrypt';
 
@@ -37,7 +37,7 @@ async function main() {
   }
 
   const penumpangData = [];
-  for (let i = 0; i < 2000; i++) {
+  for (let i = 0; i < 100; i++) {
     const jenisKelamin = faker.helpers.arrayElement(['L', 'P']);
     penumpangData.push({
       nama: faker.person.firstName(),
@@ -60,9 +60,34 @@ async function main() {
   }
 
 
+  const userData = [
+    {
+      email: 'admin@example.com',
+      name: 'Admin',
+      role: role.ADMIN,
+      password: bcrypt.hashSync('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
+    },
+    {
+      name: 'User',
+      role: role.USER,
+      email: 'user@example.com',
+      password: bcrypt.hashSync('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
+    },
+    {
+      name: 'manager',
+      role: role.MANAGER,
+      email: 'manager@example.com',
+      password: bcrypt.hashSync('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
+    }
+  ];
 
+  for (const user of userData) {
+    const createdUser = await prisma.user.create({
+      data: user,
+    });
+    console.log(`Created user with ID: ${createdUser.id}` + ` - ${createdUser.name}`);
+  }
   console.log('Seeding finished.');
-
 
 }
 

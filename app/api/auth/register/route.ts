@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, role } from '@prisma/client';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     const newUser = await prisma.user.create({
       data: {
         name,
+        role: role.USER, // Default role for new users
         email,
         password: hashedPassword,
       },
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
 
     const userResponse = {
       id: newUser.id,
+      role: newUser.role,
       name: newUser.name,
       email: newUser.email
     };

@@ -7,16 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum role {
+  USER // HANYA BISA AKSES DATA SENDIRI 
+  MANAGER // BISA AKSES DATA SEMUA PENUMPANG
+  ADMIN // BISA AKSES DATA SEMUA PENUMPANG DAN MENGELOLA DATA USER
+}
+
 model User {
   id        String   @id @default(uuid())
-  name      String   @db.VarChar(255)
-  email     String   @unique @db.VarChar(255)
-  password  String   @db.VarChar(255)
+  name      String
+  role      role
+  email     String   @unique
+  password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([email], map: "idx_user_email")
   @@index([id], map: "idx_user_id")
+  @@index([role], map: "idx_user_role")
 }
 
 enum jenisKelamin {
