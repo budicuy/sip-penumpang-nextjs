@@ -32,7 +32,6 @@ const generatePDFWithJsPDF = (data: Penumpang[]) => {
         };
         const dateStr = `Tanggal: ${now.toLocaleDateString('id-ID', options)} WITA`;
 
-
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.text(dateStr, 280, 35, { align: 'right' });

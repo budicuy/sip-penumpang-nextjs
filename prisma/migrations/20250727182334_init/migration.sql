@@ -25,7 +25,7 @@ CREATE TABLE "Penumpang" (
     "id" SERIAL NOT NULL,
     "nama" VARCHAR(255) NOT NULL,
     "usia" SMALLINT NOT NULL,
-    "userId" INTEGER NOT NULL DEFAULT 0,
+    "userId" TEXT,
     "jenisKelamin" "jenisKelamin" NOT NULL,
     "tujuan" VARCHAR(255) NOT NULL,
     "tanggal" DATE NOT NULL,
@@ -56,3 +56,6 @@ CREATE INDEX "idx_penumpang_nama_tujuan_nopol_kapal_jenisKendaraan" ON "Penumpan
 
 -- CreateIndex
 CREATE INDEX "idx_penumpang_id" ON "Penumpang"("id");
+
+-- AddForeignKey
+ALTER TABLE "Penumpang" ADD CONSTRAINT "Penumpang_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
