@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Penumpang" ALTER COLUMN "tanggal" SET DATA TYPE TIMESTAMP(3);

@@ -3,6 +3,7 @@ import {
   IconX,
   IconHome,
   IconFileText,
+  IconUsers,
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { usePathname } from 'next/navigation';
@@ -56,6 +57,14 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
               <div className="flex items-center">
                 <IconFileText className="w-6 h-6 mr-2" />
                 <span>Data Penumpang</span>
+              </div>
+            </Link>
+          </li>
+          <li className="mb-4">
+            <Link href="/dashboard/users" onClick={handleLinkClick} className={linkClass("/dashboard/users")}>
+              <div className="flex items-center">
+                <IconUsers className="w-6 h-6 mr-2" />
+                <span>Data Pengguna</span>
               </div>
             </Link>
           </li>

@@ -14,13 +14,14 @@ enum role {
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        String      @id @default(uuid())
   name      String
   role      role
-  email     String   @unique
+  email     String      @unique
   password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  Penumpang Penumpang[]
 
   @@index([email], map: "idx_user_email")
   @@index([id], map: "idx_user_id")
@@ -49,16 +50,18 @@ model Penumpang {
   id             Int          @id @default(autoincrement()) @db.Integer
   nama           String       @db.VarChar(255)
   usia           Int          @db.SmallInt
-  userId         Int          @default(0) @db.Integer
+  userId         String? // Hapus @db.VarChar(255) dari sini
   jenisKelamin   jenisKelamin
   tujuan         String       @db.VarChar(255)
-  tanggal        DateTime     @db.Date
+  tanggal        DateTime     @db.Timestamp(3)
   nopol          String       @db.VarChar(15)
   jenisKendaraan String       @db.VarChar(255)
   golongan       golongan
   kapal          String       @db.VarChar(50)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade) // Relasi ke model User
 
   @@index([nama, tujuan, nopol, kapal, jenisKendaraan], map: "idx_penumpang_nama_tujuan_nopol_kapal_jenisKendaraan")
   @@index([id], map: "idx_penumpang_id")
