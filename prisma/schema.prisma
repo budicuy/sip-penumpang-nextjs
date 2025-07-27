@@ -53,7 +53,7 @@ model Penumpang {
   userId         String? // Hapus @db.VarChar(255) dari sini
   jenisKelamin   jenisKelamin
   tujuan         String       @db.VarChar(255)
-  tanggal        DateTime     @db.Date
+  tanggal        DateTime     @db.Timestamp(3)
   nopol          String       @db.VarChar(15)
   jenisKendaraan String       @db.VarChar(255)
   golongan       golongan
