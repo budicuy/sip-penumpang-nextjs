@@ -26,11 +26,10 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
   };
 
   const linkClass = (path: string) => {
-    return `flex items-center p-4 rounded transition-colors ${
-      pathname === path
-        ? 'bg-white text-blue-800'
-        : 'hover:bg-blue-100 hover:text-blue-800'
-    }`;
+    return `flex items-center p-4 rounded transition-colors ${pathname === path
+      ? 'bg-white text-blue-800'
+      : 'hover:bg-blue-100 hover:text-blue-800'
+      }`;
   };
 
   return (
@@ -39,7 +38,12 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
         }`}
     >
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{user?.role === 'ADMIN' ? 'Admin' : 'Manager'}</h1>
+        <h1 className="text-2xl font-bold">{
+          // jika role user adalah ADMIN, tampilkan "Admin", jika MANAGER tampilkan "Manager", Jika USER tampilkan "User"
+          user?.role === 'USER' ? 'User' :
+            user?.role === 'MANAGER' ? 'Manager' :
+              user?.role === 'ADMIN' ? 'Admin' : 'Manager'
+        }</h1>
         <button className="md:hidden" onClick={toggleSidebar}>
           <IconX className="w-6 h-6" />
         </button>

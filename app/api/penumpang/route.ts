@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { getUser } from '../../utils/auth';
 
 const prisma = new PrismaClient();
 
@@ -10,8 +11,13 @@ function sanitizeSearchInput(search: string): string {
     return search.trim().replace(/[<>"']/g, '').substring(0, 100);
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
     const startTime = Date.now();
+    const user = await getUser(request);
+
+    if (!user) {
+        return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
+    }
 
     try {
         const { searchParams } = new URL(request.url);
@@ -25,6 +31,11 @@ export async function GET(request: Request) {
         const skip = (page - 1) * limit;
 
         const whereClause: Prisma.PenumpangWhereInput = {};
+
+        // Filter berdasarkan user ID jika peran adalah USER
+        if (user.role === 'USER') {
+            whereClause.userId = user.id;
+        }
 
         if (search && search.length >= 1) {
             whereClause.OR = [
@@ -90,7 +101,12 @@ export async function GET(request: Request) {
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+    const user = await getUser(request);
+    if (!user) {
+        return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
+    }
+
     try {
         const body = await request.json();
 
@@ -110,11 +126,12 @@ export async function POST(request: Request) {
                 usia: body.usia,
                 jenisKelamin: body.jenisKelamin,
                 tujuan: body.tujuan,
-                tanggal: body.tanggal, // Langsung gunakan ISO string dari body
+                tanggal: body.tanggal,
                 nopol: body.nopol,
                 jenisKendaraan: body.jenisKendaraan,
                 golongan: body.golongan,
                 kapal: body.kapal,
+                userId: user.id, // Secara otomatis tambahkan userId
             },
         });
 

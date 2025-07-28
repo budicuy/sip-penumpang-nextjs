@@ -63,31 +63,24 @@ export async function middleware(request: NextRequest) {
             }
         }
 
-        // Aturan untuk MANAGER
-        if (userRole === 'MANAGER') {
+        // Aturan untuk MANAGER & USER
+        if (userRole === 'MANAGER' || userRole === 'USER') {
             // Hanya boleh akses dashboard dan data penumpang
-            if (path.startsWith('/dashboard/penumpang') || path === '/dashboard') {
+            if (path.startsWith('/dashboard/penumpang') || path === '/dashboard' || path.startsWith('/api/penumpang') || path.startsWith('/api/auth/session')) {
                 return NextResponse.next();
             }
             // Blokir akses ke halaman kelola pengguna
             if (path.startsWith('/dashboard/users')) {
-                return NextResponse.redirect(new URL('/unauthorized', request.nextUrl));
+                return NextResponse.redirect(new URL('/unauthorized', request.nextUrl)); // Buat halaman unauthorized jika perlu
             }
             // Blokir akses ke API pengguna
             if (path.startsWith('/api/users')) {
                 return new NextResponse(
-                    JSON.stringify({ message: 'Akses ditolak untuk peran MANAGER' }),
+                    JSON.stringify({ message: `Akses ditolak untuk peran ${userRole}` }),
                     { status: 403, headers: { 'Content-Type': 'application/json' } }
                 );
             }
-            // Izinkan akses ke API lain yang relevan (misal: penumpang)
-            if (path.startsWith('/api/')) {
-                return NextResponse.next();
-            }
         }
-
-        // Aturan untuk USER (jika ada, defaultnya bisa ditambahkan di sini)
-        // Contoh: User biasa hanya bisa lihat profilnya sendiri
 
     }
 
