@@ -1,6 +1,6 @@
 import { PrismaClient, Role } from "@prisma/client";
 import { faker } from '@faker-js/faker';
-import bcrypt from 'bcrypt';
+import argon2 from 'argon2';
 
 const prisma = new PrismaClient();
 
@@ -16,19 +16,19 @@ async function main() {
       name: 'Admin',
       email: 'admin@example.com',
       role: Role.ADMIN,
-      password: await bcrypt.hash('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
+      password: await argon2.hash('password', { type: argon2.argon2id }), // Pastikan untuk meng-hash password ini di aplikasi Anda
     },
     {
       name: 'User',
       email: 'user@example.com',
       role: Role.USER,
-      password: await bcrypt.hash('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
+      password: await argon2.hash('password', { type: argon2.argon2id }), // Pastikan untuk meng-hash password ini di aplikasi Anda
     },
     {
       name: 'manager',
       role: Role.MANAGER,
       email: 'manager@example.com',
-      password: await bcrypt.hash('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
+      password: await argon2.hash('password', { type: argon2.argon2id }), // Pastikan untuk meng-hash password ini di aplikasi Anda
     }
   ];
 
@@ -56,13 +56,13 @@ async function main() {
   }
 
   const userData2 = [];
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 20; i++) {
     const role = faker.helpers.arrayElement(['USER', 'ADMIN', 'MANAGER']);
     userData2.push({
       name: faker.person.firstName(),
       email: faker.internet.email(),
       image: faker.image.avatar(),
-      password: await bcrypt.hash('password', 5), // Pastikan untuk meng-hash password ini di aplikasi Anda
+      password: await argon2.hash('password', { type: argon2.argon2id }), // Pastikan untuk meng-hash password ini di aplikasi Anda
       role: role as Role,
     });
 

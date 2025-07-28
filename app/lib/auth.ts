@@ -4,7 +4,7 @@ import { NextAuthOptions } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from 'bcrypt';
+import argon2 from 'argon2';
 import { Adapter } from "next-auth/adapters";
 
 const prisma = new PrismaClient();
@@ -31,10 +31,7 @@ export const authOptions: NextAuthOptions = {
                 if (!user) {
                     throw new Error('Kombinasi email dan password salah');
                 }
-
-                const passwordMatch = await bcrypt.compare(credentials.password, user.password);
-
-                if (!passwordMatch) {
+                if (await argon2.verify(user.password, credentials.password) === false) {
                     throw new Error('Kombinasi email dan password salah');
                 }
 

@@ -2,7 +2,7 @@ import { PrismaClient, Role } from "@prisma/client";
 import { NextResponse, NextRequest } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/lib/auth";
-import bcrypt from 'bcrypt';
+import argon2 from 'argon2';
 
 const prisma = new PrismaClient();
 
@@ -78,7 +78,7 @@ export async function PUT(
     const dataToUpdate: UpdateUserData = { name, email, role };
     // 2. Jika ada password baru, hash password tersebut
     if (password) {
-      dataToUpdate.password = await bcrypt.hash(password, 12);
+      dataToUpdate.password = await argon2.hash(password, { type: argon2.argon2id });
     }
 
     const updatedUser = await prisma.user.update({
