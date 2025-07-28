@@ -1,63 +1,114 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient, Prisma, Role } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import { PrismaClient } from "@prisma/client";
+import { NextResponse, NextRequest } from 'next/server';
+import { getUser } from "../../../utils/auth";
 
 const prisma = new PrismaClient();
 
-// GET a single user by ID
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+async function checkOwnership(userId: string, userRole: string, penumpangId: number) {
+  const penumpang = await prisma.penumpang.findUnique({
+    where: { id: penumpangId },
+  });
+
+  if (!penumpang) {
+    return { error: 'Penumpang not found', status: 404 };
+  }
+
+  if (userRole === 'USER' && penumpang.userId !== userId) {
+    return { error: 'Akses ditolak', status: 403 };
+  }
+
+  return { penumpang };
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getUser(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
+  }
+
   try {
-    const { id } = params;
-    const user = await prisma.user.findUnique({
-      where: { id },
-      select: { id: true, name: true, email: true, role: true },
-    });
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    const { id } = await params;
+    const { penumpang, error, status } = await checkOwnership(user.id, user.role, parseInt(id));
+    if (error) {
+      return NextResponse.json({ error }, { status });
     }
-    return NextResponse.json(user);
+    return NextResponse.json(penumpang);
   } catch (error) {
-    console.error(`Error fetching user:`, error);
-    return NextResponse.json({ error: 'Error fetching user' }, { status: 500 });
+    console.error(error);
+    return NextResponse.json(
+      { error: 'Error fetching penumpang' },
+      { status: 500 },
+    );
   }
 }
 
-// UPDATE a user by ID
-export async function PUT(request: Request, { params }: { params: { id:string } }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getUser(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
+  }
   try {
-    const { id } = params;
+    const { id } = await params;
+    const { error, status } = await checkOwnership(user.id, user.role, parseInt(id));
+    if (error) {
+      return NextResponse.json({ error }, { status });
+    }
+
     const body = await request.json();
-    const { name, email, password, role: userRole } = body;
-
-    const dataToUpdate: Prisma.UserUpdateInput = { name, email, role: userRole as Role };
-
-    if (password) {
-      dataToUpdate.password = await bcrypt.hash(password, 12);
-    }
-
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data: dataToUpdate,
-      select: { id: true, name: true, email: true, role: true },
+    const updatedPenumpang = await prisma.penumpang.update({
+      where: {
+        id: parseInt(id),
+      },
+      data: body,
     });
 
-    return NextResponse.json(updatedUser);
+    return NextResponse.json(updatedPenumpang);
   } catch (error) {
-    console.error(`Error updating user:`, error);
-    return NextResponse.json({ error: 'Error updating user' }, { status: 500 });
+    console.error(error);
+    return NextResponse.json(
+      { error: 'Error updating penumpang' },
+      { status: 500 },
+    );
   }
 }
 
-// DELETE a user by ID
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getUser(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
+  }
+
   try {
-    const { id } = params;
-    await prisma.user.delete({
-      where: { id },
+    const { id } = await params;
+    const { error, status } = await checkOwnership(user.id, user.role, parseInt(id));
+    if (error) {
+      return NextResponse.json({ error }, { status });
+    }
+
+    await prisma.penumpang.delete({
+      where: {
+        id: parseInt(id),
+      },
     });
-    return NextResponse.json({ message: 'User deleted successfully' }, { status: 200 });
+
+    return NextResponse.json(
+      { message: 'Penumpang deleted successfully' },
+      { status: 200 },
+    );
   } catch (error) {
-    console.error(`Error deleting user:`, error);
-    return NextResponse.json({ error: 'Error deleting user' }, { status: 500 });
+    console.error(error);
+    return NextResponse.json(
+      { error: 'Error deleting penumpang' },
+      { status: 500 },
+    );
   }
 }

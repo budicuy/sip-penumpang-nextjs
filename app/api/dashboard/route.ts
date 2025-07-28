@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma, Penumpang } from '@prisma/client';
 import { getUser } from '../../utils/auth';
 
 const prisma = new PrismaClient();
@@ -16,13 +16,14 @@ export async function GET(request: NextRequest) {
         const tomorrow = new Date(today);
         tomorrow.setDate(today.getDate() + 1);
 
-        let whereClause: any = {};
+
+        const whereClause: Prisma.PenumpangWhereInput = {};
         if (user.role === 'USER') {
             whereClause.userId = user.id;
         }
 
-        const totalPenumpang = prisma.penumpang.count({ where: whereClause });
-        const todayPenumpang = prisma.penumpang.count({
+        const totalPenumpangPromise = prisma.penumpang.count({ where: whereClause });
+        const todayPenumpangPromise = prisma.penumpang.count({
             where: {
                 ...whereClause,
                 createdAt: {
@@ -32,27 +33,40 @@ export async function GET(request: NextRequest) {
             },
         });
 
-        const latestPenumpang = prisma.penumpang.findMany({
+        const latestPenumpangPromise = prisma.penumpang.findMany({
             where: whereClause,
             take: 5,
             orderBy: { createdAt: 'desc' },
         });
 
-        const queries = [totalPenumpang, todayPenumpang, latestPenumpang];
-        if (user.role === 'ADMIN') {
-            queries.push(prisma.user.count());
-        }
+        const userCountPromise = user.role === 'ADMIN' ? prisma.user.count() : Promise.resolve(undefined);
 
-        const [total, todayCount, latest, userCount] = await Promise.all(queries);
+        const [
+            totalPenumpang,
+            todayPenumpang,
+            latestPenumpang,
+            totalPengguna
+        ] = await Promise.all([
+            totalPenumpangPromise,
+            todayPenumpangPromise,
+            latestPenumpangPromise,
+            userCountPromise
+        ]);
 
-        const response: any = {
-            totalPenumpang: total,
-            penumpangHariIni: todayCount,
-            penumpangTerbaru: latest,
+
+        const response: {
+            totalPenumpang: number;
+            penumpangHariIni: number;
+            penumpangTerbaru: Penumpang[];
+            totalPengguna?: number;
+        } = {
+            totalPenumpang,
+            penumpangHariIni: todayPenumpang,
+            penumpangTerbaru: latestPenumpang,
         };
 
-        if (user.role === 'ADMIN') {
-            response.totalPengguna = userCount;
+        if (totalPengguna !== undefined) {
+            response.totalPengguna = totalPengguna;
         }
 
         return NextResponse.json(response);

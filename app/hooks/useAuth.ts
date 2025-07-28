@@ -19,6 +19,7 @@ export function useAuth() {
                 }
             } catch (error) {
                 setUser(null);
+                return console.error('Gagal memverifikasi sesi:', error);
             } finally {
                 setLoading(false);
             }

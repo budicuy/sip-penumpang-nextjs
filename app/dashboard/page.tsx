@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import {
     IconListCheck,
     IconUsers,
-    IconCalendar,
     IconUserPlus,
     IconTrendingUp
 } from "@tabler/icons-react";
@@ -25,6 +24,13 @@ interface Penumpang {
     tanggal: string;
     kapal: string;
     jenisKendaraan: string;
+}
+
+interface DashboardStats {
+    totalPenumpang: number;
+    penumpangHariIni: number;
+    totalPengguna?: number;
+    penumpangTerbaru: Penumpang[];
 }
 
 const StatCard = ({ title, value, completed, icon: Icon, color, trend }: StatCardProps) => {
@@ -67,8 +73,7 @@ const StatCard = ({ title, value, completed, icon: Icon, color, trend }: StatCar
 
 export default function Dashboard() {
     const { user, loading: authLoading } = useAuth();
-    const [stats, setStats] = useState<any>(null);
-    const [latestPenumpang, setLatestPenumpang] = useState<Penumpang[]>([]);
+    const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -79,9 +84,8 @@ export default function Dashboard() {
             if (!response.ok) {
                 throw new Error('Gagal mengambil data dasbor');
             }
-            const data = await response.json();
+            const data: DashboardStats = await response.json();
             setStats(data);
-            setLatestPenumpang(data.penumpangTerbaru || []);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
         } finally {
@@ -174,7 +178,7 @@ export default function Dashboard() {
                             </tr>
                         </thead>
                         <tbody>
-                            {latestPenumpang.map((penumpang) => (
+                            {stats?.penumpangTerbaru?.map((penumpang) => (
                                 <tr
                                     key={penumpang.id}
                                     className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
@@ -196,7 +200,7 @@ export default function Dashboard() {
                             ))}
                         </tbody>
                     </table>
-                    {latestPenumpang.length === 0 && (
+                    {stats?.penumpangTerbaru?.length === 0 && (
                         <div className="text-center py-8 text-gray-500">
                             Tidak ada data penumpang tersedia
                         </div>

@@ -4,9 +4,25 @@ import { getUser } from "../../../utils/auth";
 
 const prisma = new PrismaClient();
 
+async function checkOwnership(userId: string, userRole: string, penumpangId: number) {
+  const penumpang = await prisma.penumpang.findUnique({
+    where: { id: penumpangId },
+  });
+
+  if (!penumpang) {
+    return { error: 'Penumpang not found', status: 404 };
+  }
+
+  if (userRole === 'USER' && penumpang.userId !== userId) {
+    return { error: 'Akses ditolak', status: 403 };
+  }
+
+  return { penumpang };
+}
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> }
 ) {
   const user = await getUser(request);
   if (!user) {
@@ -14,21 +30,11 @@ export async function GET(
   }
 
   try {
-    const penumpang = await prisma.penumpang.findUnique({
-      where: {
-        id: parseInt(params.id),
-      },
-    });
-
-    if (!penumpang) {
-      return NextResponse.json({ error: 'Penumpang not found' }, { status: 404 });
+    const params = await context.params;
+    const { penumpang, error, status } = await checkOwnership(user.id, user.role, parseInt(params.id));
+    if (error) {
+      return NextResponse.json({ error }, { status });
     }
-
-    // Periksa kepemilikan jika user adalah USER biasa
-    if (user.role === 'USER' && penumpang.userId !== user.id) {
-      return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
-    }
-
     return NextResponse.json(penumpang);
   } catch (error) {
     console.error(error);
@@ -41,28 +47,20 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> }
 ) {
   const user = await getUser(request);
   if (!user) {
     return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
   }
-
   try {
+    const params = await context.params;
+    const { error, status } = await checkOwnership(user.id, user.role, parseInt(params.id));
+    if (error) {
+      return NextResponse.json({ error }, { status });
+    }
+
     const body = await request.json();
-
-    const penumpang = await prisma.penumpang.findUnique({
-      where: { id: parseInt(params.id) },
-    });
-
-    if (!penumpang) {
-      return NextResponse.json({ error: 'Penumpang not found' }, { status: 404 });
-    }
-
-    if (user.role === 'USER' && penumpang.userId !== user.id) {
-      return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
-    }
-
     const updatedPenumpang = await prisma.penumpang.update({
       where: {
         id: parseInt(params.id),
@@ -82,7 +80,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> }
 ) {
   const user = await getUser(request);
   if (!user) {
@@ -90,16 +88,10 @@ export async function DELETE(
   }
 
   try {
-    const penumpang = await prisma.penumpang.findUnique({
-      where: { id: parseInt(params.id) },
-    });
-
-    if (!penumpang) {
-      return NextResponse.json({ error: 'Penumpang not found' }, { status: 404 });
-    }
-
-    if (user.role === 'USER' && penumpang.userId !== user.id) {
-      return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
+    const params = await context.params;
+    const { error, status } = await checkOwnership(user.id, user.role, parseInt(params.id));
+    if (error) {
+      return NextResponse.json({ error }, { status });
     }
 
     await prisma.penumpang.delete({
