@@ -30,7 +30,6 @@ export default function LoginPage() {
                 // Tangani error dari NextAuth (misal: password salah)
                 setError('Kombinasi email dan password salah');
             } else if (result?.ok) {
-                // Jika berhasil, redirect ke dashboard
                 router.push('/dashboard');
             }
         } catch (error) {
