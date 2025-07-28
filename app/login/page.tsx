@@ -25,7 +25,7 @@ function LoginForm() {
             password,
         }).then((result) => {
             if (result?.error) {
-                throw new Error('Kombinasi email dan password salah');
+                throw new Error("Kombinasi email dan password salah");
             } else if (result?.ok) {
                 router.push(callbackUrl);
                 return 'Login berhasil!';
