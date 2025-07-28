@@ -7,6 +7,8 @@ import {
 import Sidebar from "./Sidebar";
 import { signOut } from "next-auth/react";
 
+import { Toaster } from "react-hot-toast";
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => {
@@ -20,6 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="relative min-h-screen md:flex">
+      <Toaster position="top-center" reverseOrder={false} />
       {/* Overlay */}
       {isSidebarOpen && (
         <div

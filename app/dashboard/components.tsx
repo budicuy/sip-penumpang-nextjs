@@ -1,6 +1,8 @@
 import { prisma } from "@/app/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
+import { Role } from "@prisma/client";
+import { cache } from "react";
 import {
   IconListCheck,
   IconUsers,
@@ -63,42 +65,73 @@ const StatCard = ({ title, value, completed, icon: Icon, color, trend }: StatCar
   );
 };
 
-async function getDashboardStats() {
+export const getDashboardStats = cache(async () => {
+  const session = await getServerSession(authOptions);
+  const user = session?.user as { id: string; role: Role } | undefined;
+
+  if (!user) {
+    throw new Error("Otentikasi diperlukan untuk melihat statistik.");
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
 
-  const [totalPenumpang, penumpangHariIni, totalPengguna, penumpangTerbaru] = await Promise.all([
-    prisma.penumpang.count(),
-    prisma.penumpang.count({ where: { tanggal: { gte: today } } }),
-    prisma.user.count(),
-    prisma.penumpang.findMany({
-      take: 5,
-      orderBy: { createdAt: "desc" },
-      select: { id: true, nama: true, tujuan: true, tanggal: true, kapal: true, jenisKendaraan: true },
-    }),
+  const whereClause: { userId?: string } = {};
+  if (user.role === "USER") {
+    whereClause.userId = user.id;
+  }
+
+  const totalPenumpangPromise = prisma.penumpang.count({ where: whereClause });
+
+  const todayPenumpangPromise = prisma.penumpang.count({
+    where: {
+      ...whereClause,
+      createdAt: {
+        gte: today,
+        lt: tomorrow,
+      },
+    },
+  });
+
+  const latestPenumpangPromise = prisma.penumpang.findMany({
+    where: whereClause,
+    take: 5,
+    orderBy: { createdAt: "desc" },
+    select: { id: true, nama: true, tujuan: true, tanggal: true, kapal: true, jenisKendaraan: true },
+  });
+
+  const userCountPromise =
+    user.role === "ADMIN" ? prisma.user.count() : Promise.resolve(undefined);
+
+  const [totalPenumpang, penumpangHariIni, penumpangTerbaru, totalPengguna] = await Promise.all([
+    totalPenumpangPromise,
+    todayPenumpangPromise,
+    latestPenumpangPromise,
+    userCountPromise,
   ]);
 
-  return { totalPenumpang, penumpangHariIni, totalPengguna, penumpangTerbaru };
-}
+  return { totalPenumpang, penumpangHariIni, totalPengguna, penumpangTerbaru, userRole: user.role };
+});
 
 export async function StatCards() {
-  const session = await getServerSession(authOptions);
-  const stats = await getDashboardStats();
+  const { totalPenumpang, penumpangHariIni, totalPengguna, userRole } = await getDashboardStats();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <StatCard
-        title="Total Penumpang"
-        value={stats.totalPenumpang.toString()}
+        title={userRole === 'USER' ? "Total Penumpang Saya" : "Total Penumpang"}
+        value={totalPenumpang.toString()}
         completed="Data Keseluruhan"
         icon={IconUsers}
         color="blue"
         trend="Live"
       />
-      {session?.user?.role === "ADMIN" && (
+      {userRole === "ADMIN" && (
         <StatCard
           title="Total Pengguna"
-          value={stats.totalPengguna.toString()}
+          value={totalPengguna?.toString() ?? '0'}
           completed="Pengguna Aktif"
           icon={IconUserPlus}
           color="green"
@@ -106,8 +139,8 @@ export async function StatCards() {
         />
       )}
       <StatCard
-        title="Penumpang Hari Ini"
-        value={stats.penumpangHariIni.toString()}
+        title={userRole === 'USER' ? "Penumpang Saya Hari Ini" : "Penumpang Hari Ini"}
+        value={penumpangHariIni.toString()}
         completed="Data Hari Ini"
         icon={IconListCheck}
         color="purple"

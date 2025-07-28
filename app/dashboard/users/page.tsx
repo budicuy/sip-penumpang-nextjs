@@ -1,13 +1,8 @@
-/*
---------------------------------------------------------------------------------
- File: app/dashboard/users/page.tsx (Kode Lengkap & Diperbarui)
---------------------------------------------------------------------------------
-*/
-'use client';
-
+'use client'
 import { useState, useEffect, FormEvent, useCallback, useRef } from 'react';
 import { IconPlus, IconEdit, IconTrash, IconX, IconUsers, IconSearch, IconDotsVertical, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { useSession } from 'next-auth/react';
+import { toast } from 'react-hot-toast';
 
 // Custom hook for debouncing
 function useDebounce<T>(value: T, delay: number): T {
@@ -271,14 +266,11 @@ export default function UsersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   const fetchUsers = useCallback(async (page: number, search: string) => {
     setIsLoading(true);
-    setError(null);
     try {
       const response = await fetch(`/api/users?page=${page}&limit=10&search=${search}`);
       if (!response.ok) throw new Error('Gagal memuat pengguna');
@@ -287,7 +279,7 @@ export default function UsersPage() {
       setTotalPages(data.totalPages);
       setCurrentPage(data.currentPage);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+      toast.error(err instanceof Error ? err.message : 'Terjadi kesalahan saat memuat data');
     } finally {
       setIsLoading(false);
     }
@@ -301,20 +293,9 @@ export default function UsersPage() {
     }
   }, [currentPage, debouncedSearchTerm, fetchUsers, status]);
 
-  useEffect(() => {
-    if (success || error) {
-      const timer = setTimeout(() => {
-        setSuccess(null);
-        setError(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [success, error]);
-
   const handleModalOpen = (user: User | null = null) => {
     setSelectedUser(user);
     setIsModalOpen(true);
-    setError(null);
   };
 
   const handleModalClose = () => {
@@ -325,7 +306,6 @@ export default function UsersPage() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setError(null);
 
     const formData = new FormData(e.currentTarget);
     const rawData = Object.fromEntries(formData.entries());
@@ -340,43 +320,46 @@ export default function UsersPage() {
       data.password = rawData.password as string;
     }
 
-    try {
-      const url = selectedUser ? `/api/users/${selectedUser.id}` : '/api/users';
-      const method = selectedUser ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
+    const promise = fetch(selectedUser ? `/api/users/${selectedUser.id}` : '/api/users', {
+      method: selectedUser ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).then(async (res) => {
+      if (!res.ok) {
+        const errorData = await res.json();
         throw new Error(errorData.error || 'Gagal menyimpan pengguna');
       }
+      return res.json();
+    });
 
-      await fetchUsers(selectedUser ? currentPage : 1, '');
-      if (!selectedUser) setSearchTerm('');
-      setSuccess(selectedUser ? 'Pengguna berhasil diperbarui' : 'Pengguna berhasil ditambahkan');
-      handleModalClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
-    } finally {
-      setIsSubmitting(false);
-    }
+    toast.promise(promise, {
+      loading: 'Menyimpan pengguna...',
+      success: (res) => {
+        fetchUsers(selectedUser ? currentPage : 1, '');
+        if (!selectedUser) setSearchTerm('');
+        handleModalClose();
+        return selectedUser ? 'Pengguna berhasil diperbarui' : 'Pengguna berhasil ditambahkan';
+      },
+      error: (err) => err.message || 'Terjadi kesalahan',
+    }).finally(() => setIsSubmitting(false));
   };
 
   const handleDelete = async (id: string, name: string) => {
     if (window.confirm(`Apakah Anda yakin ingin menghapus pengguna "${name}"?`)) {
-      setError(null);
-      try {
-        const response = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error('Gagal menghapus pengguna');
-        await fetchUsers(currentPage, debouncedSearchTerm);
-        setSuccess('Pengguna berhasil dihapus');
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
-      }
+      const promise = fetch(`/api/users/${id}`, { method: 'DELETE' }).then(async (res) => {
+        if (!res.ok) {
+          throw new Error('Gagal menghapus pengguna');
+        }
+      });
+
+      toast.promise(promise, {
+        loading: 'Menghapus pengguna...',
+        success: () => {
+          fetchUsers(currentPage, debouncedSearchTerm);
+          return 'Pengguna berhasil dihapus';
+        },
+        error: 'Gagal menghapus pengguna',
+      });
     }
   };
 
@@ -424,24 +407,6 @@ export default function UsersPage() {
           </button>
         )}
       </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 flex justify-between items-center">
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
-            <IconX className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4 flex justify-between items-center">
-          <span>{success}</span>
-          <button onClick={() => setSuccess(null)} className="text-green-500 hover:text-green-700">
-            <IconX className="w-4 h-4" />
-          </button>
-        </div>
-      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-4 border-b border-gray-200">
