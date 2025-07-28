@@ -1,13 +1,12 @@
 "use client";
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useActionState } from "react";
-import Papa from "papaparse";
 import { usePenumpang } from "./hooks/usePenumpang";
 import { PenumpangTable } from "./components/PenumpangTable";
 import { PenumpangActions } from "./components/PenumpangActions";
 import { PenumpangModal } from "./components/PenumpangModal";
 import { ConfirmDialog } from "./components/ConfirmDialog";
-import { generatePDFWithJsPDF } from "./utils/pdfGenerator";
+import Papa from "papaparse";
 import { Penumpang } from "@/types/penumpang";
 import { IconSearch, IconX } from "@tabler/icons-react";
 import { ITEMS_PER_PAGE_OPTIONS } from "@/app/utils/constants";
@@ -20,12 +19,14 @@ import {
     FormState,
 } from "./actions";
 
+
 const initialFormState: FormState = {
     success: false,
     message: "",
 };
 
 export default function PenumpangPage() {
+
     const {
         penumpang,
         totalData,
@@ -70,6 +71,11 @@ export default function PenumpangPage() {
     });
 
     const formRef = useRef<HTMLFormElement>(null);
+
+    const handleExportPDF = async () => {
+        const { generatePDFWithJsPDF } = await import('./utils/pdfGenerator');
+        generatePDFWithJsPDF(pdfExportData);
+    };
 
     const handleModalClose = useCallback(() => {
         setIsModalOpen(false);
@@ -263,7 +269,7 @@ export default function PenumpangPage() {
                     selectedCount={selectedCount}
                     onAdd={() => handleModalOpen("add")}
                     onExportCSV={handleExportCSV}
-                    onExportPDF={() => generatePDFWithJsPDF(pdfExportData)}
+                    onExportPDF={() => handleExportPDF()}
                     onDeleteSelected={handleDeleteSelected}
                 />
 
