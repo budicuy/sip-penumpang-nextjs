@@ -3,13 +3,15 @@
 import { IconUser, IconLogin } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import axios, { AxiosError } from 'axios';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -17,17 +19,23 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const response = await axios.post('/api/auth/login', { email, password });
-            if (response.data.success) {
-                // router.push('/dashboard'); jangan gunakan router.push karena akan menyebabkan error yang lelet
-                window.location.href = '/dashboard';
+            // Gunakan fungsi signIn dari NextAuth
+            const result = await signIn('credentials', {
+                redirect: false, // Kita handle redirect manual
+                email,
+                password,
+            });
 
-            } else {
-                setError(response.data.error || 'Login gagal');
+            if (result?.error) {
+                // Tangani error dari NextAuth (misal: password salah)
+                setError('Kombinasi email dan password salah');
+            } else if (result?.ok) {
+                // Jika berhasil, redirect ke dashboard
+                router.push('/dashboard');
             }
         } catch (error) {
-            const axiosError = error as AxiosError<{ error: string }>;
-            setError(axiosError.response?.data?.error || 'Login gagal');
+            setError('Terjadi kesalahan saat mencoba masuk.');
+            console.error('Login error:', error);
         } finally {
             setLoading(false);
         }
@@ -58,13 +66,12 @@ export default function LoginPage() {
                             {error && <p className="text-red-500 text-center">{error}</p>}
                             <div>
                                 <label htmlFor="email" className="block  font-medium text-gray-700 mb-1">Email</label>
-                                <input id="email" name="email" type="email" className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 border-gray-300" placeholder="Masukkan email Anda" value={email} onChange={(e) => setEmail(e.target.value)} />
+                                <input id="email" name="email" type="email" required className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 border-gray-300" placeholder="Masukkan email Anda" value={email} onChange={(e) => setEmail(e.target.value)} />
                             </div>
                             <div>
                                 <label htmlFor="password" className="block  font-medium text-gray-700 mb-1">Password</label>
-                                <input id="password" name="password" type="password" className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 border-gray-300" placeholder="Masukkan password Anda" value={password} onChange={(e) => setPassword(e.target.value)} />
+                                <input id="password" name="password" type="password" required className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 border-gray-300" placeholder="Masukkan password Anda" value={password} onChange={(e) => setPassword(e.target.value)} />
                             </div>
-                            {/* remember me */}
                             <div className="flex items-center">
                                 <input id="remember-me" name="remember-me" type="checkbox" className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
                                 <label htmlFor="remember-me" className="ml-2 block  text-gray-900x">

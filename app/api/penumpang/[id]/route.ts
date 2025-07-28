@@ -1,113 +1,137 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Role } from "@prisma/client";
 import { NextResponse, NextRequest } from 'next/server';
-import { getUser } from "../../../utils/auth";
+import { getServerSession, Session } from "next-auth";
+import { authOptions } from "@/app/lib/auth";
 
 const prisma = new PrismaClient();
 
-async function checkOwnership(userId: string, userRole: string, penumpangId: number) {
+// 1. Definisikan tipe untuk parameter konteks secara terpisah
+//    Ini adalah parameter kedua yang diterima oleh route handler dinamis.
+type RouteContext = {
+  params: {
+    id: string;
+  };
+};
+
+/**
+ * Helper function untuk memeriksa otentikasi dan kepemilikan data.
+ */
+async function checkAuthorization(
+  session: Session | null,
+  penumpangId: number
+) {
+  if (!session?.user) {
+    return { error: NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 }) };
+  }
+
   const penumpang = await prisma.penumpang.findUnique({
     where: { id: penumpangId },
   });
 
   if (!penumpang) {
-    return { error: 'Penumpang not found', status: 404 };
+    return { error: NextResponse.json({ error: 'Data penumpang tidak ditemukan' }, { status: 404 }) };
   }
 
-  if (userRole === 'USER' && penumpang.userId !== userId) {
-    return { error: 'Akses ditolak', status: 403 };
+  const user = session.user;
+
+  if (
+    user.role !== Role.ADMIN &&
+    user.role !== Role.MANAGER &&
+    penumpang.userId !== user.id
+  ) {
+    return { error: NextResponse.json({ error: 'Akses ditolak' }, { status: 403 }) };
   }
 
   return { penumpang };
 }
 
+/**
+ * Handler untuk metode GET. Mengambil detail satu data penumpang.
+ */
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: RouteContext
 ) {
-  const user = await getUser(request);
-  if (!user) {
-    return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
+  const { params } = context;
+  const session = await getServerSession(authOptions);
+  const penumpangId = parseInt(params.id, 10);
+
+  if (isNaN(penumpangId)) {
+    return NextResponse.json({ error: 'ID Penumpang tidak valid' }, { status: 400 });
   }
 
-  try {
-    const params = await context.params;
-    const { penumpang, error, status } = await checkOwnership(user.id, user.role, parseInt(params.id));
-    if (error) {
-      return NextResponse.json({ error }, { status });
-    }
-    return NextResponse.json(penumpang);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: 'Error fetching penumpang' },
-      { status: 500 },
-    );
-  }
+  const { penumpang, error } = await checkAuthorization(session, penumpangId);
+  if (error) return error;
+
+  return NextResponse.json(penumpang);
 }
 
+/**
+ * Handler untuk metode PUT. Memperbarui satu data penumpang.
+ */
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: RouteContext
 ) {
-  const user = await getUser(request);
-  if (!user) {
-    return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
-  }
-  try {
-    const params = await context.params;
-    const { error, status } = await checkOwnership(user.id, user.role, parseInt(params.id));
-    if (error) {
-      return NextResponse.json({ error }, { status });
-    }
+  const { params } = context;
+  const session = await getServerSession(authOptions);
+  const penumpangId = parseInt(params.id, 10);
 
+  if (isNaN(penumpangId)) {
+    return NextResponse.json({ error: 'ID Penumpang tidak valid' }, { status: 400 });
+  }
+
+  const { error } = await checkAuthorization(session, penumpangId);
+  if (error) return error;
+
+  try {
     const body = await request.json();
     const updatedPenumpang = await prisma.penumpang.update({
-      where: {
-        id: parseInt(params.id),
-      },
+      where: { id: penumpangId },
       data: body,
     });
 
     return NextResponse.json(updatedPenumpang);
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error("PUT Penumpang Error:", err);
     return NextResponse.json(
-      { error: 'Error updating penumpang' },
+      { error: 'Gagal memperbarui data penumpang' },
       { status: 500 },
     );
   }
 }
 
+/**
+ * Handler untuk metode DELETE. Menghapus satu data penumpang.
+ */
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: RouteContext
 ) {
-  const user = await getUser(request);
-  if (!user) {
-    return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
+  const { params } = context;
+  const session = await getServerSession(authOptions);
+  const penumpangId = parseInt(params.id, 10);
+
+  if (isNaN(penumpangId)) {
+    return NextResponse.json({ error: 'ID Penumpang tidak valid' }, { status: 400 });
   }
 
-  try {
-    const params = await context.params;
-    const { error, status } = await checkOwnership(user.id, user.role, parseInt(params.id));
-    if (error) {
-      return NextResponse.json({ error }, { status });
-    }
+  const { error } = await checkAuthorization(session, penumpangId);
+  if (error) return error;
 
+  try {
     await prisma.penumpang.delete({
-      where: {
-        id: parseInt(params.id),
-      },
+      where: { id: penumpangId },
     });
 
     return NextResponse.json(
-      { message: 'Penumpang deleted successfully' },
+      { message: 'Data penumpang berhasil dihapus' },
       { status: 200 },
     );
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error("DELETE Penumpang Error:", err);
     return NextResponse.json(
-      { error: 'Error deleting penumpang' },
+      { error: 'Gagal menghapus data penumpang' },
       { status: 500 },
     );
   }

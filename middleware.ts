@@ -1,98 +1,42 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { jwtVerify } from 'jose';
+import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
+import { Role } from "@prisma/client";
 
-// Fungsi untuk memverifikasi token dan mendapatkan payload
-async function verifyToken(token: string) {
-    try {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
-        const { payload } = await jwtVerify(token, secret);
-        return payload;
-    } catch (error) {
-        console.error('JWT Verification Error:', error);
-        return null;
-    }
-}
+export default withAuth(
+    // `withAuth` memperkaya `req.nextauth.token` dengan token JWT Anda
+    function middleware(req) {
+        const token = req.nextauth.token;
+        const pathname = req.nextUrl.pathname;
 
-export async function middleware(request: NextRequest) {
-    const path = request.nextUrl.pathname;
-    const token = request.cookies.get('token')?.value || '';
-
-    const isPublicPath = path === '/login' || path === '/register';
-
-    // Jika path adalah publik dan ada token, redirect ke dashboard
-    if (isPublicPath && token) {
-        return NextResponse.redirect(new URL('/dashboard', request.nextUrl));
-    }
-
-    // Jika path bukan publik dan tidak ada token
-    if (!isPublicPath && !token) {
-        // Untuk API, kembalikan error 401
-        if (path.startsWith('/api/')) {
-            // Izinkan akses ke endpoint login/register
-            if (path.startsWith('/api/auth/register') || path.startsWith('/api/auth/login')) {
-                return NextResponse.next();
-            }
-            return new NextResponse(
-                JSON.stringify({ message: 'Akses tidak diizinkan' }),
-                { status: 401, headers: { 'Content-Type': 'application/json' } }
-            );
-        }
-        // Untuk halaman lain, redirect ke login
-        return NextResponse.redirect(new URL('/login', request.nextUrl));
-    }
-
-    // Jika ada token, verifikasi dan terapkan role-based access
-    if (token) {
-        const user = await verifyToken(token);
-
-        if (!user) {
-            // Jika token tidak valid, redirect ke login dan hapus cookie
-            const response = NextResponse.redirect(new URL('/login', request.nextUrl));
-            response.cookies.delete('token');
-            return response;
-        }
-
-        const userRole = user.role as string;
-
-        // Aturan untuk ADMIN
-        if (userRole === 'ADMIN') {
-            // Boleh akses semua halaman dashboard dan API terkait
-            if (path.startsWith('/dashboard') || path.startsWith('/api/')) {
-                return NextResponse.next();
-            }
-        }
-
-        // Aturan untuk MANAGER & USER
-        if (userRole === 'MANAGER' || userRole === 'USER') {
-            // Hanya boleh akses dashboard dan data penumpang
-            if (path.startsWith('/dashboard/penumpang') || path === '/dashboard' || path.startsWith('/api/penumpang') || path.startsWith('/api/auth/session')) {
-                return NextResponse.next();
-            }
-            // Blokir akses ke halaman kelola pengguna
-            if (path.startsWith('/dashboard/users')) {
-                return NextResponse.redirect(new URL('/unauthorized', request.nextUrl)); // Buat halaman unauthorized jika perlu
-            }
-            // Blokir akses ke API pengguna
-            if (path.startsWith('/api/users')) {
+        // Jika user adalah USER atau MANAGER, dan mencoba mengakses halaman atau API untuk users
+        if (
+            (token?.role === Role.USER || token?.role === Role.MANAGER) &&
+            (pathname.startsWith('/dashboard/users') || pathname.startsWith('/api/users'))
+        ) {
+            // Untuk API, kembalikan response 403 Forbidden
+            if (pathname.startsWith('/api')) {
                 return new NextResponse(
-                    JSON.stringify({ message: `Akses ditolak untuk peran ${userRole}` }),
+                    JSON.stringify({ message: `Akses ditolak untuk peran ${token.role}` }),
                     { status: 403, headers: { 'Content-Type': 'application/json' } }
                 );
             }
+            // Untuk halaman, redirect ke halaman dashboard utama
+            return NextResponse.redirect(new URL('/dashboard', req.url));
         }
-
+    },
+    {
+        callbacks: {
+            authorized: ({ token }) => !!token, // Pengguna harus login untuk mengakses path yang cocok
+        },
     }
+);
 
-    // Jika tidak ada aturan yang cocok, lanjutkan request
-    return NextResponse.next();
-}
-
+// Tentukan path mana saja yang dilindungi oleh middleware
 export const config = {
     matcher: [
         '/dashboard/:path*',
-        '/login',
-        '/register',
-        '/api/:path*',
+        '/api/penumpang/:path*',
+        '/api/users/:path*',
+        '/api/dashboard/:path*',
     ],
 };

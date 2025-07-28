@@ -56,12 +56,13 @@ async function main() {
   }
 
   const userData2 = [];
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 1000; i++) {
     const role = faker.helpers.arrayElement(['USER', 'ADMIN', 'MANAGER']);
     userData2.push({
       name: faker.person.firstName(),
       email: faker.internet.email(),
-      password: await bcrypt.hash('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
+      image: faker.image.avatar(),
+      password: await bcrypt.hash('password', 5), // Pastikan untuk meng-hash password ini di aplikasi Anda
       role: role as Role,
     });
 

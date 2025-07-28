@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins, Quicksand } from "next/font/google";
 import "./globals.css";
+import AuthProvider from "./AuthProvider"; // 1. Import AuthProvider
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -29,7 +30,8 @@ export default function RootLayout({
       <body
         className={`${poppins.variable} ${quicksand.variable} antialiased`}
       >
-        {children}
+        {/* 2. Bungkus children dengan AuthProvider */}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

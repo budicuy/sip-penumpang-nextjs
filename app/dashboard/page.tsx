@@ -6,7 +6,7 @@ import {
     IconUserPlus,
     IconTrendingUp
 } from "@tabler/icons-react";
-import { useAuth } from '../hooks/useAuth';
+import { useSession } from 'next-auth/react'; // 1. Ganti useAuth dengan useSession
 
 interface StatCardProps {
     title: string;
@@ -72,13 +72,15 @@ const StatCard = ({ title, value, completed, icon: Icon, color, trend }: StatCar
 };
 
 export default function Dashboard() {
-    const { user, loading: authLoading } = useAuth();
+    // 2. Gunakan useSession untuk mendapatkan data sesi dan status otentikasi
+    const { data: session, status } = useSession();
     const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loadingData, setLoadingData] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const fetchData = async () => {
-        setLoading(true);
+        setLoadingData(true);
+        setError(null);
         try {
             const response = await fetch('/api/dashboard');
             if (!response.ok) {
@@ -89,22 +91,24 @@ export default function Dashboard() {
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
         } finally {
-            setLoading(false);
+            setLoadingData(false);
         }
     };
 
     useEffect(() => {
-        if (!authLoading) {
-            if (user) {
-                fetchData();
-            } else {
-                setLoading(false);
-                setError("Gagal memverifikasi pengguna. Silakan login kembali.");
-            }
+        // 3. Ambil data hanya jika status sesi adalah "authenticated"
+        if (status === 'authenticated') {
+            fetchData();
+        } else if (status === 'unauthenticated') {
+            // Jika tidak terotentikasi, hentikan loading dan bisa tampilkan pesan
+            setLoadingData(false);
+            setError("Anda tidak memiliki akses. Silakan login.");
         }
-    }, [user, authLoading]);
+        // `status` menjadi dependency untuk menjalankan effect ini saat status otentikasi berubah
+    }, [status]);
 
-    if (loading || authLoading) {
+    // 4. Tampilkan loading selama status otentikasi atau pengambilan data sedang berjalan
+    if (status === 'loading' || loadingData) {
         return (
             <div className="flex justify-center items-center h-full">
                 <div className="relative">
@@ -144,7 +148,8 @@ export default function Dashboard() {
                     color="blue"
                     trend="Live"
                 />
-                {user?.role === 'ADMIN' && (
+                {/* 5. Tampilkan kartu Total Pengguna hanya jika role user adalah ADMIN */}
+                {session?.user?.role === 'ADMIN' && (
                     <StatCard
                         title="Total Pengguna"
                         value={stats?.totalPengguna?.toString() || '0'}
