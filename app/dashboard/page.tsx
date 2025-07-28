@@ -1,12 +1,13 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { Suspense } from 'react';
+import { useSession } from 'next-auth/react';
+import useSWR from 'swr';
 import {
     IconListCheck,
     IconUsers,
     IconUserPlus,
     IconTrendingUp
 } from "@tabler/icons-react";
-import { useSession } from 'next-auth/react'; // 1. Ganti useAuth dengan useSession
 
 interface StatCardProps {
     title: string;
@@ -32,6 +33,23 @@ interface DashboardStats {
     totalPengguna?: number;
     penumpangTerbaru: Penumpang[];
 }
+
+const fetcher = async (url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch');
+    return res.json();
+};
+
+const LoadingSkeleton = () => (
+    <div className="animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-gray-200 h-32 rounded-xl"></div>
+            ))}
+        </div>
+        <div className="bg-gray-200 h-96 rounded-lg"></div>
+    </div>
+);
 
 const StatCard = ({ title, value, completed, icon: Icon, color, trend }: StatCardProps) => {
     const getColorClasses = (color: string) => {
@@ -71,74 +89,30 @@ const StatCard = ({ title, value, completed, icon: Icon, color, trend }: StatCar
     );
 };
 
-export default function Dashboard() {
-    // 2. Gunakan useSession untuk mendapatkan data sesi dan status otentikasi
-    const { data: session, status } = useSession();
-    const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [loadingData, setLoadingData] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const fetchData = async () => {
-        setLoadingData(true);
-        setError(null);
-        try {
-            const response = await fetch('/api/dashboard');
-            if (!response.ok) {
-                throw new Error('Gagal mengambil data dasbor');
-            }
-            const data: DashboardStats = await response.json();
-            setStats(data);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
-        } finally {
-            setLoadingData(false);
+const DashboardContent = () => {
+    const { data: session } = useSession();
+    const { data: stats, error, isLoading } = useSWR<DashboardStats>(
+        session?.user ? '/api/dashboard' : null,
+        fetcher,
+        {
+            refreshInterval: 30000,
+            revalidateOnFocus: false,
+            dedupingInterval: 10000
         }
-    };
-
-    useEffect(() => {
-        // 3. Ambil data hanya jika status sesi adalah "authenticated"
-        if (status === 'authenticated') {
-            fetchData();
-        } else if (status === 'unauthenticated') {
-            // Jika tidak terotentikasi, hentikan loading dan bisa tampilkan pesan
-            setLoadingData(false);
-            setError("Anda tidak memiliki akses. Silakan login.");
-        }
-        // `status` menjadi dependency untuk menjalankan effect ini saat status otentikasi berubah
-    }, [status]);
-
-    // 4. Tampilkan loading selama status otentikasi atau pengambilan data sedang berjalan
-    if (status === 'loading' || loadingData) {
-        return (
-            <div className="flex justify-center items-center h-full">
-                <div className="relative">
-                    <div className="w-20 h-20 border-4 border-blue-200 rounded-full animate-spin"></div>
-                    <div className="w-20 h-20 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
-                </div>
-            </div>
-        );
-    }
+    );
 
     if (error) {
         return (
             <div className="flex flex-col justify-center items-center h-full space-y-4">
-                <div className="text-red-500 text-xl font-semibold">⚠️ {error}</div>
-                <button
-                    onClick={fetchData}
-                    className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                >
-                    Coba Lagi
-                </button>
+                <div className="text-red-500 text-xl font-semibold">⚠️ {error.message}</div>
             </div>
         );
     }
 
+    if (isLoading) return <LoadingSkeleton />;
+
     return (
         <>
-            <div className="flex justify-between items-center mb-5">
-                <h1 className="text-2xl lg:text-4xl font-bold text-black">Dashboard</h1>
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard
                     title="Total Penumpang"
@@ -148,7 +122,6 @@ export default function Dashboard() {
                     color="blue"
                     trend="Live"
                 />
-                {/* 5. Tampilkan kartu Total Pengguna hanya jika role user adalah ADMIN */}
                 {session?.user?.role === 'ADMIN' && (
                     <StatCard
                         title="Total Pengguna"
@@ -212,6 +185,33 @@ export default function Dashboard() {
                     )}
                 </div>
             </div>
+        </>
+    );
+};
+
+export default function Dashboard() {
+    const { status } = useSession();
+
+    if (status === 'loading') {
+        return <LoadingSkeleton />;
+    }
+
+    if (status === 'unauthenticated') {
+        return (
+            <div className="flex justify-center items-center h-full">
+                <div className="text-red-500 text-xl font-semibold">Anda tidak memiliki akses. Silakan login.</div>
+            </div>
+        );
+    }
+
+    return (
+        <>
+            <div className="flex justify-between items-center mb-5">
+                <h1 className="text-2xl lg:text-4xl font-bold text-black">Dashboard</h1>
+            </div>
+            <Suspense fallback={<LoadingSkeleton />}>
+                <DashboardContent />
+            </Suspense>
         </>
     );
 }
