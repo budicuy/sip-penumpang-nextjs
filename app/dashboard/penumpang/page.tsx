@@ -703,6 +703,7 @@ export default function Penumpang() {
         const data = {
             ...rawData,
             usia: Number(rawData.usia),
+            // Pastikan tanggal dikirim dalam format ISO untuk konsistensi
             tanggal: new Date(rawData.tanggal as string).toISOString(),
             nopol: (rawData.nopol as string).toUpperCase().replace(/\s+/g, ' ').trim(),
             nama: (rawData.nama as string).trim(),

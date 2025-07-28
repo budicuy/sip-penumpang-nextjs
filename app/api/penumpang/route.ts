@@ -99,8 +99,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Semua field harus diisi' }, { status: 400 });
         }
 
-        // Pastikan tanggal diinterpretasikan sebagai UTC
-        const tanggalUTC = new Date(`${body.tanggal}T00:00:00.000Z`);
+        // Validasi format tanggal (ISO 8601)
+        if (isNaN(Date.parse(body.tanggal))) {
+            return NextResponse.json({ error: 'Format tanggal tidak valid' }, { status: 400 });
+        }
 
         const newPenumpang = await prisma.penumpang.create({
             data: {
@@ -108,7 +110,7 @@ export async function POST(request: Request) {
                 usia: body.usia,
                 jenisKelamin: body.jenisKelamin,
                 tujuan: body.tujuan,
-                tanggal: tanggalUTC, // Simpan sebagai UTC
+                tanggal: body.tanggal, // Langsung gunakan ISO string dari body
                 nopol: body.nopol,
                 jenisKendaraan: body.jenisKendaraan,
                 golongan: body.golongan,
