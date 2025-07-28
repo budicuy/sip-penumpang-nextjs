@@ -10,8 +10,6 @@ import axios from "axios";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const router = useRouter();
-
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -21,7 +19,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const response = await axios.get('/api/auth/logout');
       // jika sukses, redirect ke halaman login
       if (response.data.success) {
-        router.push('/login');
+        window.location.href = '/login';
       }
 
     } catch (error: unknown) {
