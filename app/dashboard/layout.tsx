@@ -5,7 +5,6 @@ import {
   IconMenu2,
 } from "@tabler/icons-react";
 import Sidebar from "./Sidebar";
-import { useRouter } from "next/navigation";
 import axios from "axios";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, FormEvent, useCallback } from 'react';
-import { IconPlus, IconEdit, IconTrash, IconX, IconUsers, IconSearch } from '@tabler/icons-react';
+import { useState, useEffect, FormEvent, useCallback, useRef } from 'react';
+import { IconPlus, IconEdit, IconTrash, IconX, IconUsers, IconSearch, IconDotsVertical } from '@tabler/icons-react';
 
 interface User {
   id: string;
@@ -18,6 +18,70 @@ interface UserFormData {
 }
 
 import { useAuth } from '../../hooks/useAuth';
+
+const MobileActions = ({ user, onEdit, onDelete }: {
+  user: User;
+  onEdit: (user: User) => void;
+  onDelete: (id: string, name: string) => void;
+  canPerformActions: boolean;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+      >
+        <IconDotsVertical className="w-5 h-5" />
+      </button>
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+          <ul className="py-1">
+            <li>
+              <button
+                onClick={() => {
+                  onEdit(user);
+                  setIsOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+              >
+                <IconEdit className="w-4 h-4 mr-3" />
+                Edit
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => {
+                  onDelete(user.id, user.name);
+                  setIsOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+              >
+                <IconTrash className="w-4 h-4 mr-3" />
+                Hapus
+              </button>
+            </li>
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const UserModal = ({ isOpen, onClose, onSubmit, user, isSubmitting }: {
   isOpen: boolean;
@@ -151,20 +215,24 @@ export default function UsersPage() {
   }, [fetchUsers]);
 
   useEffect(() => {
+    const lowercasedTerm = searchTerm.toLowerCase();
     const filtered = users.filter(user =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase())
+      user.name.toLowerCase().includes(lowercasedTerm) ||
+      user.email.toLowerCase().includes(lowercasedTerm) ||
+      user.role.toLowerCase().includes(lowercasedTerm)
     );
     setFilteredUsers(filtered);
   }, [users, searchTerm]);
 
   useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => setSuccess(null), 3000);
+    if (success || error) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+        setError(null);
+      }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [success]);
+  }, [success, error]);
 
   const handleModalOpen = (user: User | null = null) => {
     setSelectedUser(user);
@@ -175,7 +243,6 @@ export default function UsersPage() {
   const handleModalClose = () => {
     setSelectedUser(null);
     setIsModalOpen(false);
-    setError(null);
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -237,41 +304,62 @@ export default function UsersPage() {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'ADMIN': return 'bg-red-100 text-red-800';
-      case 'MANAGER': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-blue-100 text-blue-800';
+      case 'ADMIN': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      case 'MANAGER': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      default: return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
     }
   };
 
+  const canPerformActions = currentUser?.role === 'ADMIN';
+
+  const renderLoading = () => (
+    <div className="text-center py-12">
+      <div className="flex justify-center items-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-500">Memuat data...</span>
+      </div>
+    </div>
+  );
+
+  const renderEmpty = () => (
+    <div className="text-center py-12">
+      <div className="text-gray-500">
+        {searchTerm ? 'Tidak ada pengguna yang sesuai dengan pencarian' : 'Tidak ada data pengguna'}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 flex items-center">
           <IconUsers className="w-7 h-7 mr-3 text-blue-600" />
           Manajemen Pengguna
         </h1>
-        <button
-          onClick={() => handleModalOpen()}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-blue-700 transition-colors shadow-sm"
-        >
-          <IconPlus className="w-4 h-4 mr-2" />
-          Tambah Pengguna
-        </button>
+        {canPerformActions && (
+          <button
+            onClick={() => handleModalOpen()}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-blue-700 transition-colors shadow-sm w-full sm:w-auto"
+          >
+            <IconPlus className="w-4 h-4 mr-2" />
+            Tambah Pengguna
+          </button>
+        )}
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center">
-          <div className="flex-1">{error}</div>
-          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 ml-2">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
             <IconX className="w-4 h-4" />
           </button>
         </div>
       )}
 
       {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4 flex items-center">
-          <div className="flex-1">{success}</div>
-          <button onClick={() => setSuccess(null)} className="text-green-500 hover:text-green-700 ml-2">
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4 flex justify-between items-center">
+          <span>{success}</span>
+          <button onClick={() => setSuccess(null)} className="text-green-500 hover:text-green-700">
             <IconX className="w-4 h-4" />
           </button>
         </div>
@@ -283,7 +371,7 @@ export default function UsersPage() {
             <IconSearch className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Cari pengguna..."
+              placeholder="Cari berdasarkan nama, email, atau role..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
@@ -291,34 +379,22 @@ export default function UsersPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nama</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>
+                {canPerformActions && <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {isLoading ? (
-                <tr>
-                  <td colSpan={4} className="text-center py-12">
-                    <div className="flex justify-center items-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                      <span className="ml-3 text-gray-500">Memuat data...</span>
-                    </div>
-                  </td>
-                </tr>
+                <tr><td colSpan={canPerformActions ? 4 : 3} className="py-12">{renderLoading()}</td></tr>
               ) : filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="text-center py-12">
-                    <div className="text-gray-500">
-                      {searchTerm ? 'Tidak ada pengguna yang sesuai dengan pencarian' : 'Tidak ada data pengguna'}
-                    </div>
-                  </td>
-                </tr>
+                <tr><td colSpan={canPerformActions ? 4 : 3} className="py-12">{renderEmpty()}</td></tr>
               ) : (
                 filteredUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50 transition-colors">
@@ -331,50 +407,62 @@ export default function UsersPage() {
                         {user.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        {currentUser?.role === 'ADMIN' ? (
-                          <>
-                            <button
-                              onClick={() => handleModalOpen(user)}
-                              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
-                              title="Edit pengguna"
-                            >
-                              <IconEdit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(user.id, user.name)}
-                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
-                              title="Hapus pengguna"
-                            >
-                              <IconTrash className="w-4 h-4" />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              className="p-2 text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed"
-                              title="Edit pengguna dinonaktifkan"
-                              disabled
-                            >
-                              <IconEdit className="w-4 h-4" />
-                            </button>
-                            <button
-                              className="p-2 text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed"
-                              title="Hapus pengguna dinonaktifkan"
-                              disabled
-                            >
-                              <IconTrash className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
+                    {canPerformActions && (
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => handleModalOpen(user)}
+                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
+                            title="Edit pengguna"
+                          >
+                            <IconEdit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(user.id, user.name)}
+                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
+                            title="Hapus pengguna"
+                          >
+                            <IconTrash className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden">
+          {isLoading ? renderLoading() : filteredUsers.length === 0 ? renderEmpty() : (
+            <div className="divide-y divide-gray-200">
+              {filteredUsers.map((user) => (
+                <div key={user.id} className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1.5">
+                      <p className="font-semibold text-gray-800">{user.name}</p>
+                      <p className="text-sm text-gray-500">{user.email}</p>
+                      <div>
+                        <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(user.role)}`}>
+                          {user.role}
+                        </span>
+                      </div>
+                    </div>
+                    {canPerformActions && (
+                      <MobileActions
+                        user={user}
+                        onEdit={handleModalOpen}
+                        onDelete={handleDelete}
+                        canPerformActions={canPerformActions}
+                      />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

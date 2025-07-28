@@ -3,7 +3,6 @@
 import { IconUser, IconLogin } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 
 export default function LoginPage() {
@@ -21,7 +20,8 @@ export default function LoginPage() {
             const response = await axios.post('/api/auth/login', { email, password });
             if (response.data.success) {
                 // router.push('/dashboard'); jangan gunakan router.push karena akan menyebabkan error yang lelet
-                window.location.href = '/dashboard'; // gunakan window.location.href untuk menghindari error
+                window.location.href = '/dashboard';
+
             } else {
                 setError(response.data.error || 'Login gagal');
             }
