@@ -7,16 +7,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum role {
-  USER // HANYA BISA AKSES DATA SENDIRI 
-  MANAGER // BISA AKSES DATA SEMUA PENUMPANG
-  ADMIN // BISA AKSES DATA SEMUA PENUMPANG DAN MENGELOLA DATA USER
+enum Role {
+  USER
+  MANAGER
+  ADMIN
 }
 
 model User {
   id        String      @id @default(uuid())
   name      String
-  role      role
+  role      Role
   email     String      @unique
   password  String
   createdAt DateTime    @default(now())

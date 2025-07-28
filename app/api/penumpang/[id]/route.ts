@@ -1,25 +1,40 @@
 import { PrismaClient } from "@prisma/client";
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
+import { getUser } from "../../../utils/auth";
 
 const prisma = new PrismaClient();
 
+async function checkOwnership(userId: string, userRole: string, penumpangId: number) {
+  const penumpang = await prisma.penumpang.findUnique({
+    where: { id: penumpangId },
+  });
+
+  if (!penumpang) {
+    return { error: 'Penumpang not found', status: 404 };
+  }
+
+  if (userRole === 'USER' && penumpang.userId !== userId) {
+    return { error: 'Akses ditolak', status: 403 };
+  }
+
+  return { penumpang };
+}
+
 export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
+  const user = await getUser(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
+  }
+
   try {
-    const { id } = await params;
-    const penumpang = await prisma.penumpang.findUnique({
-      where: {
-
-        id: parseInt(id), // Ensure id is parsed as an integer
-      },
-    });
-
-    if (!penumpang) {
-      return NextResponse.json({ error: 'Penumpang not found' }, { status: 404 });
+    const params = await context.params;
+    const { penumpang, error, status } = await checkOwnership(user.id, user.role, parseInt(params.id));
+    if (error) {
+      return NextResponse.json({ error }, { status });
     }
-
     return NextResponse.json(penumpang);
   } catch (error) {
     console.error(error);
@@ -31,39 +46,26 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
+  const user = await getUser(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
+  }
   try {
-    const { id } = await params;
-    const body = await request.json();
-    const {
-      nama,
-      usia,
-      jenisKelamin,
-      tujuan,
-      tanggal,
-      nopol,
-      jenisKendaraan,
-      golongan,
-      kapal,
-    } = body;
+    const params = await context.params;
+    const { error, status } = await checkOwnership(user.id, user.role, parseInt(params.id));
+    if (error) {
+      return NextResponse.json({ error }, { status });
+    }
 
+    const body = await request.json();
     const updatedPenumpang = await prisma.penumpang.update({
       where: {
-        id: parseInt(id), // Ensure id is parsed as an integer
+        id: parseInt(params.id),
       },
-      data: {
-        nama,
-        usia,
-        jenisKelamin,
-        tujuan,
-        tanggal,
-        nopol,
-        jenisKendaraan,
-        golongan,
-        kapal,
-      },
+      data: body,
     });
 
     return NextResponse.json(updatedPenumpang);
@@ -77,14 +79,24 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
+  const user = await getUser(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
+  }
+
   try {
-    const { id } = await params;
+    const params = await context.params;
+    const { error, status } = await checkOwnership(user.id, user.role, parseInt(params.id));
+    if (error) {
+      return NextResponse.json({ error }, { status });
+    }
+
     await prisma.penumpang.delete({
       where: {
-        id: parseInt(id), // Ensure id is parsed as an integer
+        id: parseInt(params.id),
       },
     });
 

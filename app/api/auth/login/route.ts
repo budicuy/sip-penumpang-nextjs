@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     // 5. Buat Payload dan Token JWT
     const tokenData = {
       id: user.id,
-      // Sebaiknya hanya sertakan data non-sensitif dan yang dibutuhkan. ID biasanya cukup.
+      role: user.role, // Menambahkan peran pengguna ke dalam token
     };
 
     const token = jwt.sign(tokenData, jwtSecret, {
