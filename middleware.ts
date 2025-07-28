@@ -30,8 +30,6 @@ export default withAuth(
         },
     }
 
-    // tambahkan middleware untuk user yang sudah login tidak bisa mengakses halaman login dan register
-
 );
 
 // Tentukan path mana saja yang dilindungi oleh middleware

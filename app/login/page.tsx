@@ -2,16 +2,19 @@
 
 import { IconUser, IconLogin } from '@tabler/icons-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 
-export default function LoginPage() {
+function LoginForm() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -24,7 +27,7 @@ export default function LoginPage() {
             if (result?.error) {
                 throw new Error('Kombinasi email dan password salah');
             } else if (result?.ok) {
-                router.push('/dashboard');
+                router.push(callbackUrl);
                 return 'Login berhasil!';
             }
             throw new Error('Terjadi kesalahan saat mencoba masuk.');
@@ -36,7 +39,6 @@ export default function LoginPage() {
             error: (err) => <b>{err.message}</b>,
         }).finally(() => setLoading(false));
     };
-
 
     return (
         <div className='bg-gradient-to-br from-white to-blue-400'>
@@ -96,5 +98,46 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+function LoginPageSkeleton() {
+    return (
+        <div className='bg-gradient-to-br from-white to-blue-400'>
+            <div className="container mx-auto h-screen flex items-center justify-center">
+                <div className='w-full max-w-lg'>
+                    <div className="flex justify-center mb-4 ">
+                        <div className='p-6 bg-gray-300 rounded-full drop-shadow-2xl animate-pulse'>
+                            <IconUser size={48} className="text-gray-400" />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="h-8 bg-gray-300 rounded w-3/4 mx-auto mt-6 animate-pulse"></div>
+                        <div className="h-4 bg-gray-300 rounded w-1/2 mx-auto mt-3 animate-pulse"></div>
+                    </div>
+                    <div className='mt-5 w-full px-5'>
+                        <div className="rounded-md p-10 bg-white drop-shadow-xl space-y-4">
+                            <div className="h-6 bg-gray-300 rounded w-1/4 animate-pulse"></div>
+                            <div className="h-12 bg-gray-300 rounded w-full animate-pulse"></div>
+                            <div className="h-6 bg-gray-300 rounded w-1/4 animate-pulse mt-4"></div>
+                            <div className="h-12 bg-gray-300 rounded w-full animate-pulse"></div>
+                            <div className="flex items-center mt-4">
+                                <div className="h-4 w-4 bg-gray-300 rounded animate-pulse"></div>
+                                <div className="h-4 bg-gray-300 rounded w-1/4 ml-2 animate-pulse"></div>
+                            </div>
+                            <div className="h-12 bg-gray-400 rounded w-full mt-4 animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<LoginPageSkeleton />}>
+            <LoginForm />
+        </Suspense>
     );
 }
