@@ -1,4 +1,4 @@
-import { PrismaClient, role } from "@prisma/client";
+import { PrismaClient, Role } from "@prisma/client";
 import { faker } from '@faker-js/faker';
 import bcrypt from 'bcrypt';
 
@@ -15,18 +15,18 @@ async function main() {
     {
       name: 'Admin',
       email: 'admin@example.com',
-      role: role.ADMIN,
+      role: Role.ADMIN,
       password: await bcrypt.hash('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
     },
     {
       name: 'User',
       email: 'user@example.com',
-      role: role.USER,
+      role: Role.USER,
       password: await bcrypt.hash('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
     },
     {
       name: 'manager',
-      role: role.MANAGER,
+      role: Role.MANAGER,
       email: 'manager@example.com',
       password: await bcrypt.hash('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
     }

@@ -28,11 +28,11 @@ export async function GET(request: Request) {
 
         if (search && search.length >= 1) {
             whereClause.OR = [
-                { nama: { contains: search } },
-                { tujuan: { contains: search } },
-                { nopol: { contains: search } },
-                { kapal: { contains: search } },
-                { jenisKendaraan: { contains: search } },
+                { nama: { contains: search, mode: 'insensitive' } },
+                { tujuan: { contains: search, mode: 'insensitive' } },
+                { nopol: { contains: search, mode: 'insensitive' } },
+                { kapal: { contains: search, mode: 'insensitive' } },
+                { jenisKendaraan: { contains: search, mode: 'insensitive' } },
             ];
         }
 

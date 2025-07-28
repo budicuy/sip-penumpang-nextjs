@@ -8,6 +8,8 @@ import {
     IconTrendingUp
 } from "@tabler/icons-react";
 
+import { useAuth } from '../hooks/useAuth';
+
 interface StatCard {
     title: string;
     value: string;
@@ -27,21 +29,16 @@ interface Penumpang {
 }
 
 export default function Dashboard() {
+    const { user, loading: authLoading } = useAuth(); // Rename loading to avoid conflict
     const [stats, setStats] = useState<StatCard[]>([]);
     const [latestPenumpang, setLatestPenumpang] = useState<Penumpang[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentTime, setCurrentTime] = useState(new Date());
-    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentTime(new Date());
-            setStats(prevStats => prevStats.map(stat =>
-                stat.title === 'Waktu Real-time'
-                    ? { ...stat, value: formatTime(new Date()), completed: formatDate(new Date()) }
-                    : stat
-            ));
         }, 1000);
         return () => clearInterval(timer);
     }, []);
@@ -64,6 +61,9 @@ export default function Dashboard() {
     };
 
     const fetchData = async () => {
+        if (!user) return; // Should not happen if logic is correct, but as a safeguard
+
+        setLoading(true);
         try {
             const today = new Date();
             const year = today.getFullYear();
@@ -71,25 +71,33 @@ export default function Dashboard() {
             const day = today.getDate().toString().padStart(2, '0');
             const todayString = `${year}-${month}-${day}`;
 
-            const [penumpangRes, usersRes, todayPenumpangRes] = await Promise.all([
+            const apiCalls: Promise<Response>[] = [
                 fetch('/api/penumpang?limit=5'),
-                fetch('/api/users'),
                 fetch(`/api/penumpang?startDate=${todayString}&endDate=${todayString}`)
-            ]);
+            ];
 
-            if (!penumpangRes.ok || !usersRes.ok || !todayPenumpangRes.ok) {
-                throw new Error('Gagal mengambil data');
+            if (user.role === 'ADMIN') {
+                apiCalls.push(fetch('/api/users'));
             }
 
-            const penumpangData = await penumpangRes.json();
-            const usersData = await usersRes.json();
-            const todayPenumpangData = await todayPenumpangRes.json();
+            const responses = await Promise.all(apiCalls);
+
+            for (const res of responses) {
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({ error: 'Gagal mengambil data' }));
+                    throw new Error(errorData.error || 'Gagal mengambil data');
+                }
+            }
+
+            const [penumpangData, todayPenumpangData, usersData] = await Promise.all(
+                responses.map(res => res.json())
+            );
 
             const newStats: StatCard[] = [
                 {
                     title: 'Waktu Real-time',
-                    value: formatTime(currentTime),
-                    completed: formatDate(currentTime),
+                    value: formatTime(new Date()),
+                    completed: formatDate(new Date()),
                     icon: IconCalendar,
                     color: 'orange',
                     trend: 'Live'
@@ -102,24 +110,28 @@ export default function Dashboard() {
                     color: 'blue',
                     trend: 'Live'
                 },
-                {
+            ];
+
+            if (user.role === 'ADMIN' && usersData) {
+                newStats.push({
                     title: 'Total Pengguna',
                     value: usersData.length?.toString() || '0',
                     completed: 'Pengguna Aktif',
                     icon: IconUserPlus,
                     color: 'green',
                     trend: '+Live'
-                },
-                {
-                    title: 'Penumpang Hari Ini',
-                    value: todayPenumpangData.total?.toString() || '0',
-                    completed: 'Data Hari Ini',
-                    icon: IconListCheck,
-                    color: 'purple',
-                    trend: 'Live'
-                },
+                });
+            }
 
-            ];
+            newStats.push({
+                title: 'Penumpang Hari Ini',
+                value: todayPenumpangData.total?.toString() || '0',
+                completed: 'Data Hari Ini',
+                icon: IconListCheck,
+                color: 'purple',
+                trend: 'Live'
+            });
+
             setStats(newStats);
             setLatestPenumpang(penumpangData.data || []);
 
@@ -131,8 +143,16 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        if (!authLoading) { // When auth check is complete
+            if (user) {
+                fetchData();
+            } else {
+                // If no user, stop loading and potentially show an error or redirect
+                setLoading(false);
+                setError("Gagal memverifikasi pengguna. Silakan login kembali.");
+            }
+        }
+    }, [user, authLoading]);
 
     const getColorClasses = (color: string) => {
         const colors = {

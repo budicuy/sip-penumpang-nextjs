@@ -8,6 +8,8 @@ import {
 import Link from "next/link";
 import { usePathname } from 'next/navigation';
 
+import { useAuth } from "../hooks/useAuth";
+
 interface SidebarProps {
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
@@ -15,6 +17,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
 
   const handleLinkClick = () => {
     if (isSidebarOpen) {
@@ -36,7 +39,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
         }`}
     >
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Admin</h1>
+        <h1 className="text-2xl font-bold">{user?.role === 'ADMIN' ? 'Admin' : 'Manager'}</h1>
         <button className="md:hidden" onClick={toggleSidebar}>
           <IconX className="w-6 h-6" />
         </button>
@@ -60,14 +63,16 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
               </div>
             </Link>
           </li>
-          <li className="mb-4">
-            <Link href="/dashboard/users" onClick={handleLinkClick} className={linkClass("/dashboard/users")}>
-              <div className="flex items-center">
-                <IconUsers className="w-6 h-6 mr-2" />
-                <span>Data Pengguna</span>
-              </div>
-            </Link>
-          </li>
+          {user?.role === 'ADMIN' && (
+            <li className="mb-4">
+              <Link href="/dashboard/users" onClick={handleLinkClick} className={linkClass("/dashboard/users")}>
+                <div className="flex items-center">
+                  <IconUsers className="w-6 h-6 mr-2" />
+                  <span>Data Pengguna</span>
+                </div>
+              </Link>
+            </li>
+          )}
         </ul>
       </nav>
     </aside>
