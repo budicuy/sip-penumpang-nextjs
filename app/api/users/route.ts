@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, Prisma, role } from '@prisma/client';
+import { PrismaClient, Prisma, Role } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         name,
         email,
         password: hashedPassword,
-        role: userRole as role,
+        role: userRole as Role,
       },
       select: {
         id: true,

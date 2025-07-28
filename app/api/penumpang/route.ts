@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
                 where: whereClause,
                 skip,
                 take: limit,
-                orderBy: { tanggal: 'desc' }, // Urutkan berdasarkan tanggal penumpang
+                orderBy: { createdAt: 'desc' }, // Urutkan berdasarkan data terbaru
                 select: {
                     id: true,
                     nama: true,

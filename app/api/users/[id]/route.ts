@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, Prisma, role } from '@prisma/client';
+import { PrismaClient, Prisma, Role } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 // GET a single user by ID
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const user = await prisma.user.findUnique({
       where: { id },
       select: { id: true, name: true, email: true, role: true },
@@ -23,13 +23,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 }
 
 // UPDATE a user by ID
-export async function PUT(request: Request, { params }: { params: Promise<{ id:string }> }) {
+export async function PUT(request: Request, { params }: { params: { id:string } }) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const body = await request.json();
     const { name, email, password, role: userRole } = body;
 
-    const dataToUpdate: Prisma.UserUpdateInput = { name, email, role: userRole as role };
+    const dataToUpdate: Prisma.UserUpdateInput = { name, email, role: userRole as Role };
 
     if (password) {
       dataToUpdate.password = await bcrypt.hash(password, 12);
@@ -49,9 +49,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id:s
 }
 
 // DELETE a user by ID
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params;
+    const { id } = params;
     await prisma.user.delete({
       where: { id },
     });
