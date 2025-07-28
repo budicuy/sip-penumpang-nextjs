@@ -1,14 +1,20 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Role } from "@prisma/client";
 import { NextResponse, NextRequest } from 'next/server';
 import { getUser } from "../../../utils/auth";
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-// GET a single user by ID
+interface UpdateUserData {
+  name?: string;
+  email?: string;
+  role?: Role;
+  password?: string;
+}
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getUser(request);
   if (!session) {
@@ -16,7 +22,7 @@ export async function GET(
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
     const user = await prisma.user.findUnique({
       where: { id },
       select: {
@@ -42,10 +48,9 @@ export async function GET(
   }
 }
 
-// UPDATE a user - DISABLED
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getUser(request);
   if (!session || session.role !== 'ADMIN') {
@@ -53,11 +58,11 @@ export async function PUT(
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { name, email, password, role } = body;
 
-    const dataToUpdate: any = { name, email, role };
+    const dataToUpdate: UpdateUserData = { name, email, role };
     if (password) {
       dataToUpdate.password = await bcrypt.hash(password, 12);
     }
@@ -83,10 +88,9 @@ export async function PUT(
   }
 }
 
-// DELETE a user - DISABLED
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getUser(request);
   if (!session || session.role !== 'ADMIN') {
@@ -94,9 +98,8 @@ export async function DELETE(
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
 
-    // Optional: Add a check to prevent admin from deleting themselves
     if (session.id === id) {
       return NextResponse.json({ error: 'Admin tidak dapat menghapus akunnya sendiri.' }, { status: 400 });
     }
