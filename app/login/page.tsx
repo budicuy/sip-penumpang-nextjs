@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 
 export default function LoginPage() {
-    const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -21,7 +20,8 @@ export default function LoginPage() {
         try {
             const response = await axios.post('/api/auth/login', { email, password });
             if (response.data.success) {
-                router.push('/dashboard');
+                // router.push('/dashboard'); jangan gunakan router.push karena akan menyebabkan error yang lelet
+                window.location.href = '/dashboard'; // gunakan window.location.href untuk menghindari error
             } else {
                 setError(response.data.error || 'Login gagal');
             }
