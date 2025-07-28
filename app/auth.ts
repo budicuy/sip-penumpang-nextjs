@@ -69,18 +69,17 @@ export const authOptions: NextAuthOptions = {
     },
     secret: process.env.NEXTAUTH_SECRET,
 
-    debug: process.env.NODE_ENV === 'development',
-
-    cookies: {
-        sessionToken: {
-            name: `__Secure-next-auth.session-token`,
-            options: {
-                httpOnly: true,
-                path: '/',
-                sameSite: "lax",
-                secure: process.env.NODE_ENV === 'production',
-                maxAge: 30 * 24 * 60 * 60, // 30 days
+    ...(process.env.NODE_ENV === 'production' && {
+        cookies: {
+            sessionToken: {
+                name: `__Secure-next-auth.session-token`,
+                options: {
+                    httpOnly: true,
+                    path: '/',
+                    sameSite: "lax",
+                    secure: process.env.NODE_ENV === 'production',
+                }
             }
         }
-    }
-};
+    }),
+}
