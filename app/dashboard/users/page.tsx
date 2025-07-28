@@ -17,6 +17,8 @@ interface UserFormData {
   password?: string;
 }
 
+import { useAuth } from '../../hooks/useAuth';
+
 const UserModal = ({ isOpen, onClose, onSubmit, user, isSubmitting }: {
   isOpen: boolean;
   onClose: () => void;
@@ -117,6 +119,7 @@ const UserModal = ({ isOpen, onClose, onSubmit, user, isSubmitting }: {
 };
 
 export default function UsersPage() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -330,20 +333,41 @@ export default function UsersPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => handleModalOpen(user)}
-                          className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
-                          title="Edit pengguna"
-                        >
-                          <IconEdit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(user.id, user.name)}
-                          className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
-                          title="Hapus pengguna"
-                        >
-                          <IconTrash className="w-4 h-4" />
-                        </button>
+                        {currentUser?.role === 'ADMIN' ? (
+                          <>
+                            <button
+                              onClick={() => handleModalOpen(user)}
+                              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
+                              title="Edit pengguna"
+                            >
+                              <IconEdit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(user.id, user.name)}
+                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
+                              title="Hapus pengguna"
+                            >
+                              <IconTrash className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              className="p-2 text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed"
+                              title="Edit pengguna dinonaktifkan"
+                              disabled
+                            >
+                              <IconEdit className="w-4 h-4" />
+                            </button>
+                            <button
+                              className="p-2 text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed"
+                              title="Hapus pengguna dinonaktifkan"
+                              disabled
+                            >
+                              <IconTrash className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
