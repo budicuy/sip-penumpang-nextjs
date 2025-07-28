@@ -1,7 +1,13 @@
+/*
+--------------------------------------------------------------------------------
+ File: app/dashboard/users/page.tsx (Kode Lengkap & Diperbarui)
+--------------------------------------------------------------------------------
+*/
 'use client';
 
 import { useState, useEffect, FormEvent, useCallback, useRef } from 'react';
 import { IconPlus, IconEdit, IconTrash, IconX, IconUsers, IconSearch, IconDotsVertical, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import { useSession } from 'next-auth/react';
 
 // Custom hook for debouncing
 function useDebounce<T>(value: T, delay: number): T {
@@ -34,13 +40,10 @@ interface UserFormData {
   password?: string;
 }
 
-import { useAuth } from '../../hooks/useAuth';
-
 const MobileActions = ({ user, onEdit, onDelete }: {
   user: User;
   onEdit: (user: User) => void;
   onDelete: (id: string, name: string) => void;
-  canPerformActions: boolean;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -260,7 +263,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: {
 };
 
 export default function UsersPage() {
-  const { user: currentUser } = useAuth();
+  const { data: session, status } = useSession();
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -291,8 +294,12 @@ export default function UsersPage() {
   }, []);
 
   useEffect(() => {
-    fetchUsers(currentPage, debouncedSearchTerm);
-  }, [currentPage, debouncedSearchTerm, fetchUsers]);
+    if (status === 'authenticated') {
+      fetchUsers(currentPage, debouncedSearchTerm);
+    } else if (status === 'unauthenticated') {
+      setIsLoading(false);
+    }
+  }, [currentPage, debouncedSearchTerm, fetchUsers, status]);
 
   useEffect(() => {
     if (success || error) {
@@ -381,7 +388,7 @@ export default function UsersPage() {
     }
   };
 
-  const canPerformActions = currentUser?.role === 'ADMIN';
+  const canPerformActions = session?.user?.role === 'ADMIN';
 
   const renderLoading = () => (
     <div className="text-center py-12">
@@ -529,7 +536,6 @@ export default function UsersPage() {
                         user={user}
                         onEdit={handleModalOpen}
                         onDelete={handleDelete}
-                        canPerformActions={canPerformActions}
                       />
                     )}
                   </div>

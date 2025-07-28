@@ -5,7 +5,7 @@ import {
   IconMenu2,
 } from "@tabler/icons-react";
 import Sidebar from "./Sidebar";
-import axios from "axios";
+import { signOut } from "next-auth/react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -13,22 +13,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const logout = async () => {
-    try {
-      const response = await axios.get('/api/auth/logout');
-      // jika sukses, redirect ke halaman login
-      if (response.data.success) {
-        window.location.href = '/login';
-      }
-
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      } else {
-        console.log('An unknown error occurred');
-      }
-    }
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: '/login' }); // Logout dan arahkan ke halaman login
   }
+
 
   return (
     <div className="relative min-h-screen md:flex">
@@ -54,7 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               Dashboard
             </div>
           </div>
-          <button onClick={logout} className="flex items-center space-x-2 text-red-500 hover:text-red-700">
+          <button onClick={handleLogout} className="flex items-center space-x-2 text-red-500 hover:text-red-700">
             <span className="">Logout</span>
             <IconLogout className="w-6 h-6" />
           </button>

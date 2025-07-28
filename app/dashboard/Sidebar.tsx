@@ -7,8 +7,7 @@ import {
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { usePathname } from 'next/navigation';
-
-import { useAuth } from "../hooks/useAuth";
+import { useSession } from "next-auth/react"; // 
 
 interface SidebarProps {
   isSidebarOpen: boolean;
@@ -17,7 +16,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { data: session } = useSession(); // 2. Gunakan useSession untuk mendapatkan data user
 
   const handleLinkClick = () => {
     if (isSidebarOpen) {
@@ -40,9 +39,9 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{
           // jika role user adalah ADMIN, tampilkan "Admin", jika MANAGER tampilkan "Manager", Jika USER tampilkan "User"
-          user?.role === 'USER' ? 'User' :
-            user?.role === 'MANAGER' ? 'Manager' :
-              user?.role === 'ADMIN' ? 'Admin' : 'Manager'
+          session?.user?.role === 'USER' ? 'User' :
+            session?.user?.role === 'MANAGER' ? 'Manager' :
+              session?.user?.role === 'ADMIN' ? 'Admin' : 'Manager'
         }</h1>
         <button className="md:hidden" onClick={toggleSidebar}>
           <IconX className="w-6 h-6" />
@@ -67,7 +66,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
               </div>
             </Link>
           </li>
-          {user?.role === 'ADMIN' && (
+          {session?.user?.role === 'ADMIN' && (
             <li className="mb-4">
               <Link href="/dashboard/users" onClick={handleLinkClick} className={linkClass("/dashboard/users")}>
                 <div className="flex items-center">

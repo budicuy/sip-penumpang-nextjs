@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient, Prisma, Role } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import argon2 from 'argon2';
 
 const prisma = new PrismaClient();
 
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await argon2.hash(password, { type: argon2.argon2id });
 
     const newUser = await prisma.user.create({
       data: {

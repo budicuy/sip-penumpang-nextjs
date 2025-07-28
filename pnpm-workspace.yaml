@@ -2,6 +2,7 @@ onlyBuiltDependencies:
   - '@prisma/client'
   - '@prisma/engines'
   - '@tailwindcss/oxide'
+  - argon2
   - bcrypt
   - core-js
   - prisma

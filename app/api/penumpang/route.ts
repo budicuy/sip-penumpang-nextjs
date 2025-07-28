@@ -1,42 +1,53 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client';
-import { getUser } from '../../utils/auth';
+import { PrismaClient, Prisma, Role } from '@prisma/client';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from '@/app/lib/auth';
 
 const prisma = new PrismaClient();
 
-// Helper function untuk validasi dan sanitasi input
+/**
+ * Membersihkan input pencarian untuk mencegah kerentanan dasar.
+ * @param search - String pencarian dari query URL.
+ * @returns String pencarian yang sudah dibersihkan.
+ */
 function sanitizeSearchInput(search: string): string {
     if (!search) return '';
-    // Sanitasi dasar untuk mencegah XSS sederhana
+    // Menghapus karakter yang berpotensi bahaya dan membatasi panjangnya.
     return search.trim().replace(/[<>"']/g, '').substring(0, 100);
 }
 
+/**
+ * Handler untuk metode GET. Mengambil data penumpang dengan paginasi, pencarian, dan filter tanggal.
+ * Akses dibatasi berdasarkan peran pengguna.
+ */
 export async function GET(request: NextRequest) {
-    const startTime = Date.now();
-    const user = await getUser(request);
+    // Mengambil sesi pengguna dari sisi server.
+    const session = await getServerSession(authOptions);
 
-    if (!user) {
+    // Jika tidak ada sesi atau pengguna, kembalikan error 401 Unauthorized.
+    if (!session || !session.user) {
         return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
     }
+    const user = session.user as { id: string; role: Role };
 
     try {
         const { searchParams } = new URL(request.url);
-
+        // Mengambil dan memvalidasi parameter dari query URL.
         const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
         const limit = Math.min(10000, Math.max(1, parseInt(searchParams.get('limit') || '200', 10)));
         const search = sanitizeSearchInput(searchParams.get('search') || '');
         const startDateParam = searchParams.get('startDate');
         const endDateParam = searchParams.get('endDate');
-
         const skip = (page - 1) * limit;
 
         const whereClause: Prisma.PenumpangWhereInput = {};
 
-        // Filter berdasarkan user ID jika peran adalah USER
+        // Jika peran adalah 'USER', hanya tampilkan data yang mereka buat.
         if (user.role === 'USER') {
             whereClause.userId = user.id;
         }
 
+        // Membuat klausa pencarian jika ada input.
         if (search && search.length >= 1) {
             whereClause.OR = [
                 { nama: { contains: search, mode: 'insensitive' } },
@@ -47,27 +58,22 @@ export async function GET(request: NextRequest) {
             ];
         }
 
-        // Filter tanggal yang aman dari zona waktu (menggunakan UTC)
+        // Menambahkan filter rentang tanggal jika ada.
         if (startDateParam) {
-            whereClause.tanggal = {
-                ...whereClause.tanggal as Prisma.DateTimeFilter,
-                gte: new Date(`${startDateParam}T00:00:00.000Z`) // Awal hari di UTC
-            };
+            whereClause.tanggal = { ...whereClause.tanggal as Prisma.DateTimeFilter, gte: new Date(`${startDateParam}T00:00:00.000Z`) };
         }
         if (endDateParam) {
-            whereClause.tanggal = {
-                ...whereClause.tanggal as Prisma.DateTimeFilter,
-                lte: new Date(`${endDateParam}T23:59:59.999Z`) // Akhir hari di UTC
-            };
+            whereClause.tanggal = { ...whereClause.tanggal as Prisma.DateTimeFilter, lte: new Date(`${endDateParam}T23:59:59.999Z`) };
         }
 
+        // Menjalankan dua query (mengambil data dan menghitung total) dalam satu transaksi.
         const [penumpang, total] = await prisma.$transaction([
             prisma.penumpang.findMany({
                 where: whereClause,
                 skip,
                 take: limit,
-                orderBy: { createdAt: 'desc' }, // Urutkan berdasarkan data terbaru
-                select: {
+                orderBy: { createdAt: 'desc' },
+                select: { // Hanya memilih kolom yang diperlukan
                     id: true,
                     nama: true,
                     usia: true,
@@ -83,62 +89,44 @@ export async function GET(request: NextRequest) {
             prisma.penumpang.count({ where: whereClause })
         ]);
 
-        console.log(`Found ${penumpang.length}/${total} records in ${Date.now() - startTime}ms`);
-
+        // Mengembalikan data beserta metadata paginasi.
         return NextResponse.json({
             data: penumpang,
             total,
-            meta: {
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
-            }
+            meta: { page, limit, totalPages: Math.ceil(total / limit) }
         });
-
     } catch (error: unknown) {
-        console.error('API Error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        console.error("GET Penumpang Error:", error);
+        return NextResponse.json({ error: 'Terjadi kesalahan pada server' }, { status: 500 });
     }
 }
 
+/**
+ * Handler untuk metode POST. Membuat data penumpang baru.
+ */
 export async function POST(request: NextRequest) {
-    const user = await getUser(request);
-    if (!user) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
         return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
     }
+    const user = session.user as { id: string; role: Role };
 
     try {
         const body = await request.json();
 
+        // Validasi sederhana untuk field yang wajib diisi.
         const requiredFields = ['nama', 'usia', 'jenisKelamin', 'tujuan', 'tanggal', 'nopol', 'jenisKendaraan', 'golongan', 'kapal'];
         if (requiredFields.some(field => !body[field])) {
             return NextResponse.json({ error: 'Semua field harus diisi' }, { status: 400 });
         }
 
-        // Validasi format tanggal (ISO 8601)
-        if (isNaN(Date.parse(body.tanggal))) {
-            return NextResponse.json({ error: 'Format tanggal tidak valid' }, { status: 400 });
-        }
-
+        // Membuat data baru dan menghubungkannya dengan pengguna yang sedang login.
         const newPenumpang = await prisma.penumpang.create({
-            data: {
-                nama: body.nama,
-                usia: body.usia,
-                jenisKelamin: body.jenisKelamin,
-                tujuan: body.tujuan,
-                tanggal: body.tanggal,
-                nopol: body.nopol,
-                jenisKendaraan: body.jenisKendaraan,
-                golongan: body.golongan,
-                kapal: body.kapal,
-                userId: user.id, // Secara otomatis tambahkan userId
-            },
+            data: { ...body, userId: user.id },
         });
-
         return NextResponse.json(newPenumpang, { status: 201 });
-
     } catch (error: unknown) {
-        console.error('POST Error:', error);
+        console.error("POST Penumpang Error:", error);
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
             return NextResponse.json({ error: 'Data duplikat terdeteksi' }, { status: 409 });
         }

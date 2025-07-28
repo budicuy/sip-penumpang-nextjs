@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,18 +17,57 @@ enum Role {
 }
 
 model User {
-  id        String      @id @default(uuid())
-  name      String
-  role      Role
-  email     String      @unique
-  password  String
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  Penumpang Penumpang[]
+  id            String      @id @default(cuid())
+  name          String?
+  email         String?     @unique
+  emailVerified DateTime?
+  image         String?
+  password      String
+  role          Role        @default(USER)
+  accounts      Account[]
+  sessions      Session[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  Penumpang     Penumpang[]
 
   @@index([email], map: "idx_user_email")
   @@index([id], map: "idx_user_id")
   @@index([role], map: "idx_user_role")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 enum jenisKelamin {
@@ -50,7 +92,7 @@ model Penumpang {
   id             Int          @id @default(autoincrement()) @db.Integer
   nama           String       @db.VarChar(255)
   usia           Int          @db.SmallInt
-  userId         String? // Hapus @db.VarChar(255) dari sini
+  userId         String?
   jenisKelamin   jenisKelamin
   tujuan         String       @db.VarChar(255)
   tanggal        DateTime     @db.Timestamp(3)
@@ -61,7 +103,7 @@ model Penumpang {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade) // Relasi ke model User
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([nama, tujuan, nopol, kapal, jenisKendaraan], map: "idx_penumpang_nama_tujuan_nopol_kapal_jenisKendaraan")
   @@index([id], map: "idx_penumpang_id")
