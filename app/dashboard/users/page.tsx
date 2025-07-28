@@ -408,7 +408,7 @@ export default function UsersPage() {
   );
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+    <div className="mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 flex items-center">
           <IconUsers className="w-7 h-7 mr-3 text-blue-600" />

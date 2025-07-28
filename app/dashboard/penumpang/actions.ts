@@ -1,11 +1,12 @@
 "use server";
 
-import { Prisma, golongan as GolonganEnum } from "@prisma/client";
+import { Prisma, PrismaClient, golongan as GolonganEnum } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z, ZodError } from "zod";
-import { prisma } from "@/app/lib/prisma";
 import { authOptions } from "@/app/lib/auth";
 import { getServerSession } from "next-auth";
+
+const prisma = new PrismaClient();
 
 // Skema validasi menggunakan Zod
 const penumpangSchema = z.object({
@@ -16,7 +17,7 @@ const penumpangSchema = z.object({
   tanggal: z.coerce.date(),
   nopol: z.string().min(1, "No. Polisi harus diisi").max(12),
   jenisKendaraan: z.string().min(1, "Jenis Kendaraan harus diisi").max(50),
-  golongan: z.nativeEnum(GolonganEnum),
+  golongan: z.enum(GolonganEnum),
   kapal: z.string().min(1, "Kapal harus diisi"),
 });
 

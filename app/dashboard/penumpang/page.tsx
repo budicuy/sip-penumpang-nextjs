@@ -87,19 +87,21 @@ export default function PenumpangPage() {
     if (addState.success) {
       setSuccessMessage(addState.message);
       handleModalClose();
+      fetchPenumpang();
     } else if (addState.message) {
       setErrorMessage(addState.message);
     }
-  }, [addState, handleModalClose]);
+  }, [addState, handleModalClose, fetchPenumpang]);
 
   useEffect(() => {
     if (updateState.success) {
       setSuccessMessage(updateState.message);
       handleModalClose();
+      fetchPenumpang();
     } else if (updateState.message) {
       setErrorMessage(updateState.message);
     }
-  }, [updateState, handleModalClose]);
+  }, [updateState, handleModalClose, fetchPenumpang]);
 
   const pdfExportData = useMemo(() => {
     return selectedRows.size > 0
@@ -144,6 +146,7 @@ export default function PenumpangPage() {
 
       if (result.success) {
         setSuccessMessage(result.message);
+        fetchPenumpang();
       } else {
         setErrorMessage(result.message);
       }
