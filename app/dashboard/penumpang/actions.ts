@@ -3,7 +3,7 @@
 import { Prisma, PrismaClient, golongan as GolonganEnum } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z, ZodError } from "zod";
-import { authOptions } from "@/app/lib/auth";
+import { authOptions } from "@/app/auth";
 import { getServerSession } from "next-auth";
 
 const prisma = new PrismaClient();
