@@ -13,23 +13,29 @@ interface UpdateUserData {
   password?: string;
 }
 
+// Helper untuk ambil id dari URL dinamis
+function getIdFromRequest(request: NextRequest): string | null {
+  const segments = request.nextUrl.pathname.split('/');
+  return segments[segments.length - 1] || null;
+}
+
 /**
- * Handler untuk metode GET. Mengambil detail satu pengguna berdasarkan ID.
- * Hanya admin yang diizinkan mengakses endpoint ini.
+ * GET /api/users/[id]
+ * Hanya admin yang boleh mengakses
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
-  // 1. Cek sesi dan peran pengguna
   if (!session?.user || session.user.role !== Role.ADMIN) {
     return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
   }
 
+  const id = getIdFromRequest(request);
+  if (!id) {
+    return NextResponse.json({ error: 'ID tidak ditemukan di URL' }, { status: 400 });
+  }
+
   try {
-    const { id } = params;
     const user = await prisma.user.findUnique({
       where: { id },
       select: {
@@ -56,27 +62,27 @@ export async function GET(
 }
 
 /**
- * Handler untuk metode PUT. Memperbarui data pengguna berdasarkan ID.
- * Hanya admin yang diizinkan mengakses endpoint ini.
+ * PUT /api/users/[id]
+ * Admin bisa update user lain
  */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
-  // 1. Cek sesi dan peran pengguna
   if (!session?.user || session.user.role !== Role.ADMIN) {
     return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
   }
 
+  const id = getIdFromRequest(request);
+  if (!id) {
+    return NextResponse.json({ error: 'ID tidak ditemukan di URL' }, { status: 400 });
+  }
+
   try {
-    const { id } = params;
     const body = await request.json();
     const { name, email, password, role } = body;
 
     const dataToUpdate: UpdateUserData = { name, email, role };
-    // 2. Jika ada password baru, hash password tersebut
+
     if (password) {
       dataToUpdate.password = await argon2.hash(password, { type: argon2.argon2id });
     }
@@ -103,28 +109,26 @@ export async function PUT(
 }
 
 /**
- * Handler untuk metode DELETE. Menghapus pengguna berdasarkan ID.
- * Hanya admin yang diizinkan mengakses endpoint ini.
+ * DELETE /api/users/[id]
+ * Admin bisa menghapus user lain, tapi bukan dirinya sendiri
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
-  // 1. Cek sesi dan peran pengguna
   if (!session?.user || session.user.role !== Role.ADMIN) {
     return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
   }
 
+  const id = getIdFromRequest(request);
+  if (!id) {
+    return NextResponse.json({ error: 'ID tidak ditemukan di URL' }, { status: 400 });
+  }
+
+  if (session.user.id === id) {
+    return NextResponse.json({ error: 'Admin tidak dapat menghapus akunnya sendiri.' }, { status: 400 });
+  }
+
   try {
-    const { id } = params;
-
-    // 2. Mencegah admin menghapus akunnya sendiri
-    if (session.user.id === id) {
-      return NextResponse.json({ error: 'Admin tidak dapat menghapus akunnya sendiri.' }, { status: 400 });
-    }
-
     await prisma.user.delete({
       where: { id },
     });

@@ -5,14 +5,6 @@ import { authOptions } from "@/app/lib/auth";
 
 const prisma = new PrismaClient();
 
-// 1. Definisikan tipe untuk parameter konteks secara terpisah
-//    Ini adalah parameter kedua yang diterima oleh route handler dinamis.
-type RouteContext = {
-  params: {
-    id: string;
-  };
-};
-
 /**
  * Helper function untuk memeriksa otentikasi dan kepemilikan data.
  */
@@ -48,13 +40,10 @@ async function checkAuthorization(
 /**
  * Handler untuk metode GET. Mengambil detail satu data penumpang.
  */
-export async function GET(
-  request: NextRequest,
-  context: RouteContext
-) {
-  const { params } = context;
+export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
-  const penumpangId = parseInt(params.id, 10);
+  const idParam = request.nextUrl.pathname.split('/').pop();
+  const penumpangId = parseInt(idParam || '', 10);
 
   if (isNaN(penumpangId)) {
     return NextResponse.json({ error: 'ID Penumpang tidak valid' }, { status: 400 });
@@ -66,16 +55,14 @@ export async function GET(
   return NextResponse.json(penumpang);
 }
 
+
 /**
  * Handler untuk metode PUT. Memperbarui satu data penumpang.
  */
-export async function PUT(
-  request: NextRequest,
-  context: RouteContext
-) {
-  const { params } = context;
+export async function PUT(request: NextRequest) {
   const session = await getServerSession(authOptions);
-  const penumpangId = parseInt(params.id, 10);
+  const idParam = request.nextUrl.pathname.split('/').pop();
+  const penumpangId = parseInt(idParam || '', 10);
 
   if (isNaN(penumpangId)) {
     return NextResponse.json({ error: 'ID Penumpang tidak valid' }, { status: 400 });
@@ -101,16 +88,14 @@ export async function PUT(
   }
 }
 
+
 /**
  * Handler untuk metode DELETE. Menghapus satu data penumpang.
  */
-export async function DELETE(
-  request: NextRequest,
-  context: RouteContext
-) {
-  const { params } = context;
+export async function DELETE(request: NextRequest) {
   const session = await getServerSession(authOptions);
-  const penumpangId = parseInt(params.id, 10);
+  const idParam = request.nextUrl.pathname.split('/').pop();
+  const penumpangId = parseInt(idParam || '', 10);
 
   if (isNaN(penumpangId)) {
     return NextResponse.json({ error: 'ID Penumpang tidak valid' }, { status: 400 });
@@ -120,9 +105,7 @@ export async function DELETE(
   if (error) return error;
 
   try {
-    await prisma.penumpang.delete({
-      where: { id: penumpangId },
-    });
+    await prisma.penumpang.delete({ where: { id: penumpangId } });
 
     return NextResponse.json(
       { message: 'Data penumpang berhasil dihapus' },
@@ -131,8 +114,9 @@ export async function DELETE(
   } catch (err) {
     console.error("DELETE Penumpang Error:", err);
     return NextResponse.json(
-      { error: 'Gagal menghapus data penumpang' },
+      { error: 'Gagal menghapus data penumpang ' },
       { status: 500 },
     );
   }
 }
+

@@ -1,4 +1,4 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { PrismaClient, Prisma, Penumpang, Role } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '@/app/lib/auth';
@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
  * Handler untuk metode GET. Mengambil data statistik untuk halaman dashboard.
  * Data yang diambil disesuaikan berdasarkan peran pengguna yang login.
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
     // 1. Mengambil sesi pengguna dari sisi server menggunakan NextAuth.js
     const session = await getServerSession(authOptions);
 
