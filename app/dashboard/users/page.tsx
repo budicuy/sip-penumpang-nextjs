@@ -334,7 +334,7 @@ export default function UsersPage() {
 
     toast.promise(promise, {
       loading: 'Menyimpan pengguna...',
-      success: (res) => {
+      success: () => {
         fetchUsers(selectedUser ? currentPage : 1, '');
         if (!selectedUser) setSearchTerm('');
         handleModalClose();
