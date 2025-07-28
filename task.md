@@ -1,29 +1,20 @@
-Gunakan Server Actions untuk Mutasi Data Penumpang
+Gunakan Notifikasi Toast/Snackbar di data user dan penumpang
+Masalah: Saat ini, pesan sukses atau error ditampilkan sebagai blok statis di atas halaman. Pengguna mungkin tidak langsung melihatnya, dan pesan tersebut akan hilang jika pengguna me-refresh halaman.
 
-Masalah: Saat ini, Anda menggunakan API Routes untuk operasi POST, PUT, dan DELETE yang dipanggil dari form di sisi klien ('use client'). Ini menciptakan satu lapisan request jaringan tambahan.
+Rekomendasi: Gunakan toast atau snackbar untuk menampilkan notifikasi. Ini adalah notifikasi kecil yang muncul di sudut tengah layar dan hilang setelah beberapa detik. Ini lebih modern dan tidak mengganggu alur kerja pengguna.
 
-Saran: Untuk Next.js 15, pertimbangkan menggunakan Server Actions. Ini memungkinkan fungsi yang berjalan di server dipanggil langsung dari komponen klien tanpa perlu membuat API endpoint secara manual. Kodenya menjadi lebih sederhana, dan berpotensi mengurangi latensi.
+ini contoh toast succes :
+toast.success('Successfully toasted!')
 
-// 1. Definisikan action di file terpisah (misal: app/actions.ts)
-'use server';
-import { prisma } from '@/app/lib/prisma';
-import { revalidatePath } from 'next/cache';
+ini contoh toast error :
+toast.error('Something went wrong!')
 
-export async function tambahPenumpang(formData: FormData) {
-  const rawData = Object.fromEntries(formData.entries());
-  // ... lakukan validasi di sini ...
-  await prisma.penumpang.create({ data: { ... } });
-  revalidatePath('/dashboard/penumpang'); // Memberi tahu Next.js untuk memuat ulang data di halaman ini
-}
-
-// 2. Panggil di komponen Anda
-import { tambahPenumpang } from '@/app/actions';
-
-export default function PenumpangPage() {
-  return (
-    <form action={tambahPenumpang}>
-      {/* ... input fields ... */}
-      <button type="submit">Simpan</button>
-    </form>
-  );
-}
+ini contoh toas promise :
+toast.promise(
+  saveSettings(settings),
+   {
+     loading: 'Saving...',
+     success: <b>Settings saved!</b>,
+     error: <b>Could not save.</b>,
+   }
+ );
