@@ -2,7 +2,6 @@ import { PrismaClient } from '@prisma/client';
 
 // Deklarasikan global.prisma untuk menyimpan instance tunggal.
 declare global {
-  // eslint-disable-next-line no-var
   var prisma: PrismaClient | undefined;
 }
 
