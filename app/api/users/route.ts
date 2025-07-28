@@ -1,22 +1,61 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient, Prisma, Role } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-// GET all users
-export async function GET() {
+// GET all users with pagination and search
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = parseInt(searchParams.get('limit') || '10', 10);
+  const search = searchParams.get('search') || '';
+
+  const skip = (page - 1) * limit;
+
+  let where: Prisma.UserWhereInput = {};
+  if (search) {
+    const searchConditions: Prisma.UserWhereInput[] = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
+    ];
+
+    const upperCaseSearch = search.toUpperCase();
+    if (Object.values(Role).includes(upperCaseSearch as Role)) {
+      searchConditions.push({ role: { equals: upperCaseSearch as Role } });
+    }
+
+    where = {
+      OR: searchConditions,
+    };
+  }
+
   try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
+    const [users, totalUsers] = await prisma.$transaction([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      users,
+      totalUsers,
+      totalPages: Math.ceil(totalUsers / limit),
+      currentPage: page,
     });
-    return NextResponse.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json({ error: 'Error fetching users' }, { status: 500 });

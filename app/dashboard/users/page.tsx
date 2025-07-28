@@ -1,7 +1,24 @@
 'use client';
 
 import { useState, useEffect, FormEvent, useCallback, useRef } from 'react';
-import { IconPlus, IconEdit, IconTrash, IconX, IconUsers, IconSearch, IconDotsVertical } from '@tabler/icons-react';
+import { IconPlus, IconEdit, IconTrash, IconX, IconUsers, IconSearch, IconDotsVertical, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+
+// Custom hook for debouncing
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 interface User {
   id: string;
@@ -182,27 +199,90 @@ const UserModal = ({ isOpen, onClose, onSubmit, user, isSubmitting }: {
   );
 };
 
+const Pagination = ({ currentPage, totalPages, onPageChange }: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) => {
+  if (totalPages <= 1) return null;
+
+  const handlePrevious = () => {
+    if (currentPage > 1) {
+      onPageChange(currentPage - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) {
+      onPageChange(currentPage + 1);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between px-4 py-3 sm:px-6">
+      <div className="flex-1 flex justify-between sm:hidden">
+        <button onClick={handlePrevious} disabled={currentPage === 1} className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">
+          Previous
+        </button>
+        <button onClick={handleNext} disabled={currentPage === totalPages} className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">
+          Next
+        </button>
+      </div>
+      <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm text-gray-700">
+            Halaman <span className="font-medium">{currentPage}</span> dari <span className="font-medium">{totalPages}</span>
+          </p>
+        </div>
+        <div>
+          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            <button
+              onClick={handlePrevious}
+              disabled={currentPage === 1}
+              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            >
+              <span className="sr-only">Previous</span>
+              <IconChevronLeft className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={currentPage === totalPages}
+              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+            >
+              <span className="sr-only">Next</span>
+              <IconChevronRight className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </nav>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (page: number, search: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/users');
+      const response = await fetch(`/api/users?page=${page}&limit=10&search=${search}`);
       if (!response.ok) throw new Error('Gagal memuat pengguna');
       const data = await response.json();
-      setUsers(data);
-      setFilteredUsers(data);
+      setUsers(data.users);
+      setTotalPages(data.totalPages);
+      setCurrentPage(data.currentPage);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
     } finally {
@@ -211,18 +291,8 @@ export default function UsersPage() {
   }, []);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
-  useEffect(() => {
-    const lowercasedTerm = searchTerm.toLowerCase();
-    const filtered = users.filter(user =>
-      user.name.toLowerCase().includes(lowercasedTerm) ||
-      user.email.toLowerCase().includes(lowercasedTerm) ||
-      user.role.toLowerCase().includes(lowercasedTerm)
-    );
-    setFilteredUsers(filtered);
-  }, [users, searchTerm]);
+    fetchUsers(currentPage, debouncedSearchTerm);
+  }, [currentPage, debouncedSearchTerm, fetchUsers]);
 
   useEffect(() => {
     if (success || error) {
@@ -278,7 +348,8 @@ export default function UsersPage() {
         throw new Error(errorData.error || 'Gagal menyimpan pengguna');
       }
 
-      await fetchUsers();
+      await fetchUsers(selectedUser ? currentPage : 1, '');
+      if (!selectedUser) setSearchTerm('');
       setSuccess(selectedUser ? 'Pengguna berhasil diperbarui' : 'Pengguna berhasil ditambahkan');
       handleModalClose();
     } catch (err) {
@@ -294,7 +365,7 @@ export default function UsersPage() {
       try {
         const response = await fetch(`/api/users/${id}`, { method: 'DELETE' });
         if (!response.ok) throw new Error('Gagal menghapus pengguna');
-        await fetchUsers();
+        await fetchUsers(currentPage, debouncedSearchTerm);
         setSuccess('Pengguna berhasil dihapus');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
@@ -373,7 +444,10 @@ export default function UsersPage() {
               type="text"
               placeholder="Cari berdasarkan nama, email, atau role..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1); // Reset to first page on search
+              }}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
@@ -393,10 +467,10 @@ export default function UsersPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {isLoading ? (
                 <tr><td colSpan={canPerformActions ? 4 : 3} className="py-12">{renderLoading()}</td></tr>
-              ) : filteredUsers.length === 0 ? (
+              ) : users.length === 0 ? (
                 <tr><td colSpan={canPerformActions ? 4 : 3} className="py-12">{renderEmpty()}</td></tr>
               ) : (
-                filteredUsers.map((user) => (
+                users.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-medium text-gray-900">{user.name}</div>
@@ -436,9 +510,9 @@ export default function UsersPage() {
 
         {/* Mobile Card View */}
         <div className="md:hidden">
-          {isLoading ? renderLoading() : filteredUsers.length === 0 ? renderEmpty() : (
+          {isLoading ? renderLoading() : users.length === 0 ? renderEmpty() : (
             <div className="divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
+              {users.map((user) => (
                 <div key={user.id} className="p-4">
                   <div className="flex justify-between items-start">
                     <div className="space-y-1.5">
@@ -464,6 +538,8 @@ export default function UsersPage() {
             </div>
           )}
         </div>
+
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </div>
 
       <UserModal

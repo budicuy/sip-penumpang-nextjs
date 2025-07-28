@@ -55,6 +55,23 @@ async function main() {
     });
   }
 
+  const userData2 = [];
+  for (let i = 0; i < 1; i++) {
+    const role = faker.helpers.arrayElement(['USER', 'ADMIN', 'MANAGER']);
+    userData2.push({
+      name: faker.person.firstName(),
+      email: faker.internet.email(),
+      password: await bcrypt.hash('password', 12), // Pastikan untuk meng-hash password ini di aplikasi Anda
+      role: role as Role,
+    });
+
+    const createdUser = await prisma.user.create({
+      data: userData2[i],
+    });
+
+    console.log(`Created user with ID: ${createdUser.id}` + ` - ${createdUser.name}`);
+  }
+
   for (const p of penumpangData) {
     const penumpang = await prisma.penumpang.create({
       data: p,
