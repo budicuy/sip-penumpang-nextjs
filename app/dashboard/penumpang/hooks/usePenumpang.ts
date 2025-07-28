@@ -17,7 +17,6 @@ export const usePenumpang = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(50);
     const [error, setError] = useState<string | null>(null);
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const fetchPenumpang = useCallback(async () => {
@@ -107,13 +106,6 @@ export const usePenumpang = () => {
     }, [filterStartDate, filterEndDate, itemsPerPage]);
 
     useEffect(() => {
-        if (successMessage) {
-            const timer = setTimeout(() => setSuccessMessage(null), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [successMessage]);
-
-    useEffect(() => {
         if (error) {
             const timer = setTimeout(() => setError(null), 5000);
             return () => clearTimeout(timer);
@@ -161,7 +153,6 @@ export const usePenumpang = () => {
         currentPage,
         itemsPerPage,
         error,
-        successMessage,
         setPenumpang,
         setTotalData,
         setIsLoading,
@@ -173,7 +164,6 @@ export const usePenumpang = () => {
         setCurrentPage,
         setItemsPerPage,
         setError,
-        setSuccessMessage,
         fetchPenumpang,
         handleSelectAll,
         handleSelectRow,

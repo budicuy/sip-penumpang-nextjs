@@ -100,36 +100,3 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Terjadi kesalahan pada server' }, { status: 500 });
     }
 }
-
-/**
- * Handler untuk metode POST. Membuat data penumpang baru.
- */
-export async function POST(request: NextRequest) {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-        return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
-    }
-    const user = session.user as { id: string; role: Role };
-
-    try {
-        const body = await request.json();
-
-        // Validasi sederhana untuk field yang wajib diisi.
-        const requiredFields = ['nama', 'usia', 'jenisKelamin', 'tujuan', 'tanggal', 'nopol', 'jenisKendaraan', 'golongan', 'kapal'];
-        if (requiredFields.some(field => !body[field])) {
-            return NextResponse.json({ error: 'Semua field harus diisi' }, { status: 400 });
-        }
-
-        // Membuat data baru dan menghubungkannya dengan pengguna yang sedang login.
-        const newPenumpang = await prisma.penumpang.create({
-            data: { ...body, userId: user.id },
-        });
-        return NextResponse.json(newPenumpang, { status: 201 });
-    } catch (error: unknown) {
-        console.error("POST Penumpang Error:", error);
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-            return NextResponse.json({ error: 'Data duplikat terdeteksi' }, { status: 409 });
-        }
-        return NextResponse.json({ error: 'Gagal membuat data penumpang' }, { status: 500 });
-    }
-}
