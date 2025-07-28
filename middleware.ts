@@ -23,12 +23,15 @@ export default withAuth(
             // Untuk halaman, redirect ke halaman dashboard utama
             return NextResponse.redirect(new URL('/dashboard', req.url));
         }
+
     },
     {
         callbacks: {
             authorized: ({ token }) => !!token, // Pengguna harus login untuk mengakses path yang cocok
         },
     }
+
+
 
 );
 

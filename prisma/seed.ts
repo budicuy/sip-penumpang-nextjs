@@ -40,7 +40,7 @@ async function main() {
   }
 
   const penumpangData = [];
-  for (let i = 0; i < 2000000; i++) {
+  for (let i = 0; i < 20; i++) {
     const jenisKelamin = faker.helpers.arrayElement(['L', 'P']);
     penumpangData.push({
       nama: faker.person.firstName(),

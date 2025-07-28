@@ -1,4 +1,5 @@
-// app/lib/auth.ts
+
+// app/auth.ts
 
 import { NextAuthOptions } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
@@ -67,4 +68,19 @@ export const authOptions: NextAuthOptions = {
         signIn: '/login',
     },
     secret: process.env.NEXTAUTH_SECRET,
+
+    debug: process.env.NODE_ENV === 'development',
+
+    cookies: {
+        sessionToken: {
+            name: `__Secure-next-auth.session-token`,
+            options: {
+                httpOnly: true,
+                path: '/',
+                sameSite: "lax",
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 30 * 24 * 60 * 60, // 30 days
+            }
+        }
+    }
 };
