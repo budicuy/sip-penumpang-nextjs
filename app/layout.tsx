@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins, Quicksand } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "./AuthProvider"; // 1. Import AuthProvider
+import { Toaster } from "react-hot-toast";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body
         className={`${poppins.variable} ${quicksand.variable} antialiased`}
       >
+        <Toaster position="top-center" reverseOrder={false} />
         {/* 2. Bungkus children dengan AuthProvider */}
         <AuthProvider>{children}</AuthProvider>
       </body>

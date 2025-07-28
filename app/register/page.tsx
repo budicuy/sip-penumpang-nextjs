@@ -5,29 +5,34 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
+import { toast } from 'react-hot-toast';
 
 export default function RegisterPage() {
     const router = useRouter();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
         setLoading(true);
 
-        try {
-            await axios.post('/api/auth/register', { name, email, password });
-            router.push('/login');
-        } catch (error) {
-            const axiosError = error as AxiosError<{ error: string }>;
-            setError(axiosError.response?.data?.error || 'Pendaftaran gagal');
-        } finally {
-            setLoading(false);
-        }
+        const promise = axios.post('/api/auth/register', { name, email, password })
+            .then(() => {
+                router.push('/login');
+                return 'Pendaftaran berhasil! Anda akan diarahkan ke halaman login.';
+            })
+            .catch((error) => {
+                const axiosError = error as AxiosError<{ error: string }>;
+                throw new Error(axiosError.response?.data?.error || 'Pendaftaran gagal');
+            });
+
+        toast.promise(promise, {
+            loading: 'Mendaftarkan akun...',
+            success: (message) => <b>{message}</b>,
+            error: (err) => <b>{err.message}</b>,
+        }).finally(() => setLoading(false));
     };
 
     return (
@@ -52,7 +57,6 @@ export default function RegisterPage() {
                     </div>
                     <form className='mt-5 w-full px-5' onSubmit={handleSubmit}>
                         <div className="rounded-md p-10 bg-white drop-shadow-xl space-y-4">
-                            {error && <p className="text-red-500 text-center">{error}</p>}
                             <div>
                                 <label htmlFor="name" className="block font-medium text-gray-700 mb-1">Nama Lengkap</label>
                                 <input id="name" name="name" type="text" required className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 border-gray-300" placeholder="Masukkan nama lengkap Anda" value={name} onChange={(e) => setName(e.target.value)} />

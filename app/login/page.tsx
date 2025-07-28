@@ -2,45 +2,43 @@
 
 import { IconUser, IconLogin } from '@tabler/icons-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
-export default function LoginPage() {
+function LoginForm() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
         setLoading(true);
 
-        try {
-            // Gunakan fungsi signIn dari NextAuth
-            const result = await signIn('credentials', {
-                redirect: false, // Kita handle redirect manual
-                email,
-                password,
-            });
-
+        const promise = signIn('credentials', {
+            redirect: false,
+            email,
+            password,
+        }).then((result) => {
             if (result?.error) {
-                // Tangani error dari NextAuth (misal: password salah)
-                setError('Kombinasi email dan password salah');
+                throw new Error("Kombinasi email dan password salah");
             } else if (result?.ok) {
-                // Jika berhasil, redirect ke dashboard
-                router.push('/dashboard');
+                router.push(callbackUrl);
+                return 'Login berhasil!';
             }
-        } catch (error) {
-            setError('Terjadi kesalahan saat mencoba masuk.');
-            console.error('Login error:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+            throw new Error('Terjadi kesalahan saat mencoba masuk.');
+        });
 
+        toast.promise(promise, {
+            loading: 'Mencoba masuk...',
+            success: (message) => <b>{message}</b>,
+            error: (err) => <b>{err.message}</b>,
+        }).finally(() => setLoading(false));
+    };
 
     return (
         <div className='bg-gradient-to-br from-white to-blue-400'>
@@ -63,7 +61,6 @@ export default function LoginPage() {
                     </div>
                     <form className='mt-5 w-full px-5' onSubmit={handleSubmit}>
                         <div className="rounded-md p-10 bg-white drop-shadow-xl space-y-4">
-                            {error && <p className="text-red-500 text-center">{error}</p>}
                             <div>
                                 <label htmlFor="email" className="block  font-medium text-gray-700 mb-1">Email</label>
                                 <input id="email" name="email" type="email" required className="appearance-none rounded-lg relative block w-full px-3 py-3 border placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 border-gray-300" placeholder="Masukkan email Anda" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -101,5 +98,46 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+function LoginPageSkeleton() {
+    return (
+        <div className='bg-gradient-to-br from-white to-blue-400'>
+            <div className="container mx-auto h-screen flex items-center justify-center">
+                <div className='w-full max-w-lg'>
+                    <div className="flex justify-center mb-4 ">
+                        <div className='p-6 bg-gray-300 rounded-full drop-shadow-2xl animate-pulse'>
+                            <IconUser size={48} className="text-gray-400" />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="h-8 bg-gray-300 rounded w-3/4 mx-auto mt-6 animate-pulse"></div>
+                        <div className="h-4 bg-gray-300 rounded w-1/2 mx-auto mt-3 animate-pulse"></div>
+                    </div>
+                    <div className='mt-5 w-full px-5'>
+                        <div className="rounded-md p-10 bg-white drop-shadow-xl space-y-4">
+                            <div className="h-6 bg-gray-300 rounded w-1/4 animate-pulse"></div>
+                            <div className="h-12 bg-gray-300 rounded w-full animate-pulse"></div>
+                            <div className="h-6 bg-gray-300 rounded w-1/4 animate-pulse mt-4"></div>
+                            <div className="h-12 bg-gray-300 rounded w-full animate-pulse"></div>
+                            <div className="flex items-center mt-4">
+                                <div className="h-4 w-4 bg-gray-300 rounded animate-pulse"></div>
+                                <div className="h-4 bg-gray-300 rounded w-1/4 ml-2 animate-pulse"></div>
+                            </div>
+                            <div className="h-12 bg-gray-400 rounded w-full mt-4 animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<LoginPageSkeleton />}>
+            <LoginForm />
+        </Suspense>
     );
 }

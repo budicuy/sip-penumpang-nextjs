@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "prisma generate && next build",
+    "build": "prisma generate --no-engine && next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -25,6 +25,8 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.60.0",
+    "react-hot-toast": "^2.5.2",
+    "swr": "^2.3.4",
     "zod": "^4.0.5"
   },
   "devDependencies": {

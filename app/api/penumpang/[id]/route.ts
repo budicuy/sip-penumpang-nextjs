@@ -1,7 +1,7 @@
 import { PrismaClient, Role } from "@prisma/client";
 import { NextResponse, NextRequest } from 'next/server';
 import { getServerSession, Session } from "next-auth";
-import { authOptions } from "@/app/lib/auth";
+import { authOptions } from "@/app/auth";
 
 const prisma = new PrismaClient();
 
@@ -53,70 +53,5 @@ export async function GET(request: NextRequest) {
   if (error) return error;
 
   return NextResponse.json(penumpang);
-}
-
-
-/**
- * Handler untuk metode PUT. Memperbarui satu data penumpang.
- */
-export async function PUT(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  const idParam = request.nextUrl.pathname.split('/').pop();
-  const penumpangId = parseInt(idParam || '', 10);
-
-  if (isNaN(penumpangId)) {
-    return NextResponse.json({ error: 'ID Penumpang tidak valid' }, { status: 400 });
-  }
-
-  const { error } = await checkAuthorization(session, penumpangId);
-  if (error) return error;
-
-  try {
-    const body = await request.json();
-    const updatedPenumpang = await prisma.penumpang.update({
-      where: { id: penumpangId },
-      data: body,
-    });
-
-    return NextResponse.json(updatedPenumpang);
-  } catch (err) {
-    console.error("PUT Penumpang Error:", err);
-    return NextResponse.json(
-      { error: 'Gagal memperbarui data penumpang' },
-      { status: 500 },
-    );
-  }
-}
-
-
-/**
- * Handler untuk metode DELETE. Menghapus satu data penumpang.
- */
-export async function DELETE(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  const idParam = request.nextUrl.pathname.split('/').pop();
-  const penumpangId = parseInt(idParam || '', 10);
-
-  if (isNaN(penumpangId)) {
-    return NextResponse.json({ error: 'ID Penumpang tidak valid' }, { status: 400 });
-  }
-
-  const { error } = await checkAuthorization(session, penumpangId);
-  if (error) return error;
-
-  try {
-    await prisma.penumpang.delete({ where: { id: penumpangId } });
-
-    return NextResponse.json(
-      { message: 'Data penumpang berhasil dihapus' },
-      { status: 200 },
-    );
-  } catch (err) {
-    console.error("DELETE Penumpang Error:", err);
-    return NextResponse.json(
-      { error: 'Gagal menghapus data penumpang ' },
-      { status: 500 },
-    );
-  }
 }
 
