@@ -33,7 +33,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
 
   return (
     <aside
-      className={`bg-gradient-to-tr from-black to-blue-700 text-white w-64 min-h-screen p-4 transform transition-transform md:translate-x-0 fixed md:relative z-30 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      className={`bg-gradient-to-br from-blue-800 to-blue-400 text-white w-64 min-h-screen p-4 transform transition-transform md:translate-x-0 fixed md:relative z-30 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
     >
       <div className="flex items-center justify-between">

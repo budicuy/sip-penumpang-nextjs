@@ -2,9 +2,8 @@ import { NextResponse, NextRequest } from 'next/server';
 import { PrismaClient, Prisma, Role } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '@/app/auth';
-import { withAccelerate } from '@prisma/extension-accelerate';
 
-const prisma = new PrismaClient().$extends(withAccelerate());
+const prisma = new PrismaClient();
 
 /**
  * Membersihkan input pencarian untuk mencegah kerentanan dasar.
@@ -28,7 +27,6 @@ export async function GET(request: NextRequest) {
     // Jika tidak ada sesi atau pengguna, kembalikan error 401 Unauthorized.
     if (!session || !session.user) {
         return NextResponse.json({ error: 'Otentikasi gagal' }, { status: 401 });
-
     }
     const user = session.user as { id: string; role: Role };
 
@@ -73,11 +71,6 @@ export async function GET(request: NextRequest) {
             prisma.penumpang.findMany({
                 where: whereClause,
                 skip,
-                cacheStrategy: {
-                    ttl: 60, // Cache selama 60 detik
-                    swr: 60,
-                    tags: ['penumpang'], // Menandai cache untuk invalidasi
-                },
                 take: limit,
                 orderBy: { createdAt: 'desc' },
                 select: { // Hanya memilih kolom yang diperlukan

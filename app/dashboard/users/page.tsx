@@ -109,9 +109,9 @@ const UserModal = ({ isOpen, onClose, onSubmit, user, isSubmitting }: {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-200">
+          <h2 className="text-xl font-bold text-gray-800">
             {user ? 'Edit Pengguna' : 'Tambah Pengguna'}
           </h2>
           <button
@@ -124,54 +124,54 @@ const UserModal = ({ isOpen, onClose, onSubmit, user, isSubmitting }: {
         </div>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">Nama</label>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nama</label>
             <input
               type="text"
               id="name"
               name="name"
               defaultValue={user?.name}
-              className="w-full px-3 py-2 border border-gray-300 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               required
               disabled={isSubmitting}
             />
           </div>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
               type="email"
               id="email"
               name="email"
               defaultValue={user?.email}
-              className="w-full px-3 py-2 border text-white border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               required
               disabled={isSubmitting}
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
-              Password {user && <span className="text-gray-100 text-xs">(kosongkan jika tidak ingin mengubah)</span>}
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Password {user && <span className="text-gray-500 text-xs">(kosongkan jika tidak ingin mengubah)</span>}
             </label>
             <input
               type="password"
               id="password"
               name="password"
-              className="w-full px-3 py-2 border text-white border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               disabled={isSubmitting}
             />
           </div>
           <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-300 mb-1">Role</label>
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">Role</label>
             <select
               id="role"
               name="role"
               defaultValue={user?.role || 'USER'}
-              className="w-full px-3 py-2 border border-gray-300 text-white  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               required
               disabled={isSubmitting}
             >
-              <option className='text-black' value="USER">User</option>
-              <option className='text-black' value="MANAGER">Manager</option>
-              <option className='text-black' value="ADMIN">Admin</option>
+              <option value="USER">User</option>
+              <option value="MANAGER">Manager</option>
+              <option value="ADMIN">Admin</option>
             </select>
           </div>
           <div className="flex justify-end space-x-3 pt-4">
@@ -393,7 +393,8 @@ export default function UsersPage() {
   return (
     <div className="mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h1 className="text-2xl lg:text-3xl font-bold text-white flex items-center">
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 flex items-center">
+          <IconUsers className="w-7 h-7 mr-3 text-blue-600" />
           Manajemen Pengguna
         </h1>
         {canPerformActions && (
@@ -407,7 +408,7 @@ export default function UsersPage() {
         )}
       </div>
 
-      <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-200 text-white">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-4 border-b border-gray-200">
           <div className="relative">
             <IconSearch className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -427,15 +428,15 @@ export default function UsersPage() {
         {/* Desktop Table View */}
         <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-800 text-white">
+            <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Nama</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Role</th>
-                {canPerformActions && <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Aksi</th>}
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nama</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Role</th>
+                {canPerformActions && <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>}
               </tr>
             </thead>
-            <tbody className="bg-gray-800 divide-y divide-gray-600">
+            <tbody className="bg-white divide-y divide-gray-200">
               {isLoading ? (
                 <tr><td colSpan={canPerformActions ? 4 : 3} className="py-12">{renderLoading()}</td></tr>
               ) : users.length === 0 ? (
@@ -444,9 +445,9 @@ export default function UsersPage() {
                 users.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-white">{user.name}</div>
+                      <div className="font-medium text-gray-900">{user.name}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-400">{user.email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-600">{user.email}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(user.role)}`}>
                         {user.role}

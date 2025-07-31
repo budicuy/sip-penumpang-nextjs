@@ -1,13 +1,12 @@
 "use server";
 
 import { Prisma, PrismaClient, golongan as GolonganEnum } from "@prisma/client";
-import { withAccelerate } from "@prisma/extension-accelerate";
 import { revalidatePath } from "next/cache";
 import { z, ZodError } from "zod";
 import { authOptions } from "@/app/auth";
 import { getServerSession } from "next-auth";
 
-const prisma = new PrismaClient().$extends(withAccelerate());
+const prisma = new PrismaClient();
 
 // Skema validasi menggunakan Zod
 const penumpangSchema = z.object({
@@ -41,7 +40,6 @@ export async function tambahPenumpang(
   formData: FormData,
 ): Promise<FormState> {
   try {
-
     const userId = await getUserId();
     const rawData = Object.fromEntries(formData.entries());
     const validatedData = penumpangSchema.parse(rawData);
@@ -52,10 +50,6 @@ export async function tambahPenumpang(
         userId,
         nopol: validatedData.nopol.toUpperCase().replace(/\s+/g, " ").trim(),
       },
-    });
-
-    await prisma.$accelerate.invalidate({
-      tags: ['penumpang'] // Invalidasi cache untuk penumpang
     });
 
     revalidatePath("/dashboard/penumpang");
@@ -105,10 +99,6 @@ export async function updatePenumpang(
       },
     });
 
-    await prisma.$accelerate.invalidate({
-      tags: ['penumpang'] // Invalidasi cache untuk penumpang
-    });
-
     revalidatePath("/dashboard/penumpang");
     return { success: true, message: "Data penumpang berhasil diperbarui." };
   } catch (error) {
@@ -131,9 +121,6 @@ export async function hapusPenumpang(id: number): Promise<FormState> {
   try {
     await getUserId();
     await prisma.penumpang.delete({ where: { id } });
-    await prisma.$accelerate.invalidate({
-      tags: ['penumpang'] // Invalidasi cache untuk penumpang
-    });
     revalidatePath("/dashboard/penumpang");
     return { success: true, message: "Data berhasil dihapus." };
   } catch {

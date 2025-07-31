@@ -41,19 +41,19 @@ function LoginForm() {
     };
 
     return (
-        <div className='bg-gradient-to-br from-blue-900 to-black'>
+        <div className='bg-gradient-to-br from-white to-blue-400'>
             <div className="container mx-auto h-screen flex items-center justify-center">
                 <div className='w-full max-w-lg'>
                     <div className="flex justify-center mb-4 ">
-                        <div className='p-6 bg-purple-600 rounded-full drop-shadow-2xl'>
+                        <div className='p-6 bg-blue-600 rounded-full drop-shadow-2xl'>
                             <IconUser size={48} className="text-white" />
                         </div>
                     </div>
                     <div>
-                        <h2 className="mt-6 text-center text-3xl font-bold text-white">
+                        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
                             Masuk ke Akun Anda
                         </h2>
-                        <p className="mt-2 text-center  text-white">
+                        <p className="mt-2 text-center  text-gray-600">
                             Masuk atau buat <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
                                 akun baru
                             </Link> untuk melanjutkan
@@ -76,7 +76,7 @@ function LoginForm() {
                                 </label>
                             </div>
                             <div>
-                                <button type="submit" className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm  font-medium text-white bg-purple-600 hover:bg-blue-950 disabled:bg-blue-300" disabled={loading}>
+                                <button type="submit" className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm  font-medium text-white bg-blue-600 hover:bg-blue-950 disabled:bg-blue-300" disabled={loading}>
                                     {loading ? (
                                         <>
                                             <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
