@@ -6,7 +6,7 @@ export default function Dashboard() {
   return (
     <>
       <div className="flex justify-between items-center mb-5">
-        <h1 className="text-2xl lg:text-4xl font-bold text-black">Dashboard</h1>
+        <h1 className="text-2xl lg:text-4xl font-bold text-white">Dashboard</h1>
       </div>
       <Suspense fallback={<CardSkeleton />}>
         <StatCards />

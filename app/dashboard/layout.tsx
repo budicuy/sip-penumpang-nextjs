@@ -36,23 +36,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-white drop-shadow p-4 flex items-center justify-between">
+        <header className="bg-gray-800 drop-shadow p-4 flex items-center justify-between">
           <div className="flex items-center">
             <button className="text-gray-500 md:hidden" onClick={toggleSidebar}>
               <IconMenu2 className="w-6 h-6" />
             </button>
-            <div className="relative ml-4 font-bold text-xl">
+            <div className="relative ml-4 font-bold text-xl text-white">
               Dashboard
             </div>
           </div>
-          <button onClick={handleLogout} className="flex items-center space-x-2 text-red-500 hover:text-red-700">
+          <button onClick={handleLogout} className="flex items-center space-x-2 text-red-500 hover:text-red-700 bg-white px-4 py-2 rounded-lg transition-colors">
             <span className="">Logout</span>
             <IconLogout className="w-6 h-6" />
           </button>
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-5 ">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-black p-5 ">
           {children}
         </main>
       </div>

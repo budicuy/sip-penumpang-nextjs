@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import { PrismaClient, Prisma, Penumpang, Role } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '@/app/auth';
+import { withAccelerate } from '@prisma/extension-accelerate';
+import swr from "swr";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient().$extends(withAccelerate());
 
 /**
  * Handler untuk metode GET. Mengambil data statistik untuk halaman dashboard.
@@ -46,11 +48,16 @@ export async function GET() {
                     gte: today,
                     lt: tomorrow,
                 },
+
             },
         });
 
         const latestPenumpangPromise = prisma.penumpang.findMany({
             where: whereClause,
+            cacheStrategy: {
+                ttl: 60, // Cache selama 60 detik
+                swr: 60,
+            },
             take: 5,
             orderBy: { createdAt: 'desc' },
         });

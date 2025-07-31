@@ -254,14 +254,14 @@ export default function PenumpangPage() {
 
     return (
         <div>
-            <h1 className="text-2xl lg:text-4xl font-bold text-black mb-5">
+            <h1 className="text-2xl lg:text-4xl font-bold text-white mb-5">
                 Manifest Data Penumpang
             </h1>
 
             {fetchError && toast.error(`Gagal memuat data: ${fetchError}`)}
 
-            <div className="bg-white p-6 rounded-lg shadow mb-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            <div className="bg-gray-800 p-6 rounded-lg shadow mb-6">
+                <h2 className="text-xl font-semibold text-white mb-4">
                     Manifest Data Penumpang ({totalData} data)
                 </h2>
 
@@ -274,11 +274,11 @@ export default function PenumpangPage() {
                 />
 
                 <div className="mb-4 flex items-center space-x-2 border border-gray-300 rounded-lg px-3 relative">
-                    <IconSearch className="w-5 h-5 text-gray-500" />
+                    <IconSearch className="w-5 h-5 text-white" />
                     <input
                         type="text"
                         placeholder="Cari nama, tujuan, nopol, atau kapal..."
-                        className="w-full px-3 py-2 rounded focus:outline-none"
+                        className="w-full px-3 text-white py-2 rounded focus:outline-none"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         maxLength={100}
@@ -303,7 +303,7 @@ export default function PenumpangPage() {
                     <div>
                         <label
                             htmlFor="filterStartDate"
-                            className="block text-gray-700 mb-1"
+                            className="block text-white mb-1"
                         >
                             Dari Tanggal
                         </label>
@@ -311,7 +311,7 @@ export default function PenumpangPage() {
                             type="date"
                             placeholder="Pilih tanggal mulai"
                             id="filterStartDate"
-                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border text-white rounded focus:ring-2 focus:ring-blue-500"
                             value={filterStartDate}
                             onChange={(e) => setFilterStartDate(e.target.value)}
                         />
@@ -319,7 +319,7 @@ export default function PenumpangPage() {
                     <div>
                         <label
                             htmlFor="filterEndDate"
-                            className="block text-gray-700 mb-1"
+                            className="block text-white mb-1"
                         >
                             Sampai Tanggal
                         </label>
@@ -327,20 +327,20 @@ export default function PenumpangPage() {
                             type="date"
                             placeholder="Pilih tanggal akhir"
                             id="filterEndDate"
-                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 text-white py-2 border rounded focus:ring-2 focus:ring-blue-500"
                             value={filterEndDate}
                             onChange={(e) => setFilterEndDate(e.target.value)}
                         />
                     </div>
                     <div>
-                        <label htmlFor="itemsPerPage" className="block text-gray-700 mb-1">
+                        <label htmlFor="itemsPerPage" className="block text-white mb-1">
                             Data per Halaman
                         </label>
                         <select
                             id="itemsPerPage"
                             value={itemsPerPage}
                             onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border rounded text-white focus:ring-2 focus:ring-blue-500"
                         >
                             {ITEMS_PER_PAGE_OPTIONS.map((opt) => (
                                 <option key={opt} value={opt}>
@@ -360,7 +360,7 @@ export default function PenumpangPage() {
                 </div>
 
                 <div className="mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-300">
                         <div>
                             Menampilkan {penumpang.length} dari {totalData} data
                             {selectedCount > 0 && (
@@ -376,11 +376,11 @@ export default function PenumpangPage() {
                                 {filterEndDate && ` | Sampai: ${filterEndDate}`}
                             </div>
                         )}
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-gray-400 mt-1">
                             Tip: Klik baris untuk memilih/batal memilih data
                         </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 text-white">
                         <button
                             onClick={() => setCurrentPage(1)}
                             disabled={currentPage === 1}

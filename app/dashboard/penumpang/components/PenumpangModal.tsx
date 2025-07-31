@@ -35,7 +35,7 @@ const SubmitButton = () => {
 
 const FormField = ({ label, id, error, children }: { label: string, id: string, error?: string[], children: React.ReactNode }) => (
   <div className="mb-4">
-    <label htmlFor={id} className="block text-gray-700 mb-1">{label}</label>
+    <label htmlFor={id} className="block text-white mb-1">{label}</label>
     {children}
     {error && <p className="text-red-500 text-sm mt-1">{error[0]}</p>}
   </div>
@@ -55,9 +55,9 @@ export const PenumpangModal = memo(
 
     return (
       <div className="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full flex items-start justify-center py-10 px-4 z-50">
-        <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl overflow-y-auto max-h-full">
+        <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-2xl overflow-y-auto max-h-full">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold">
+            <h2 className="text-2xl font-semibold text-white">
               {modalType === "add" && "Tambah Penumpang"}
               {modalType === "edit" && "Edit Penumpang"}
               {modalType === "view" && "Detail Penumpang"}
@@ -70,7 +70,7 @@ export const PenumpangModal = memo(
             </button>
           </div>
           {modalType === "view" ? (
-            <div className="space-y-2">
+            <div className="space-y-2 text-white">
               <p>
                 <strong>Nama:</strong> {selectedPenumpang?.nama}
               </p>
@@ -129,7 +129,7 @@ export const PenumpangModal = memo(
                   id="nama"
                   name="nama"
                   defaultValue={selectedPenumpang?.nama}
-                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded text-white focus:ring-2 focus:ring-blue-500"
                   required
                   maxLength={100}
                 />
@@ -140,7 +140,7 @@ export const PenumpangModal = memo(
                   id="usia"
                   name="usia"
                   defaultValue={selectedPenumpang?.usia}
-                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded text-white focus:ring-2 focus:ring-blue-500"
                   required
                   min="1"
                   max="150"
@@ -151,11 +151,11 @@ export const PenumpangModal = memo(
                   id="jenisKelamin"
                   name="jenisKelamin"
                   defaultValue={selectedPenumpang?.jenisKelamin || "L"}
-                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded text-white focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  <option value="L">Laki-laki</option>
-                  <option value="P">Perempuan</option>
+                  <option className="text-black" value="L">Laki-laki</option>
+                  <option className="text-black" value="P">Perempuan</option>
                 </select>
               </FormField>
               <FormField label="Tujuan" id="tujuan" error={formState.errors?.tujuan}>
@@ -163,11 +163,11 @@ export const PenumpangModal = memo(
                   id="tujuan"
                   name="tujuan"
                   defaultValue={selectedPenumpang?.tujuan || TUJUAN_OPTIONS[0]}
-                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded text-white focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   {TUJUAN_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
+                    <option key={opt} value={opt} className="text-black">
                       {opt}
                     </option>
                   ))}
@@ -185,7 +185,7 @@ export const PenumpangModal = memo(
                         .split("T")[0]
                       : ""
                   }
-                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 text-white"
                   required
                 />
               </FormField>
@@ -195,7 +195,7 @@ export const PenumpangModal = memo(
                   id="nopol"
                   name="nopol"
                   defaultValue={selectedPenumpang?.nopol}
-                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 text-white"
                   required
                   maxLength={12}
                   style={{ textTransform: "uppercase" }}
@@ -207,7 +207,7 @@ export const PenumpangModal = memo(
                   id="jenisKendaraan"
                   name="jenisKendaraan"
                   defaultValue={selectedPenumpang?.jenisKendaraan}
-                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 text-white"
                   required
                   maxLength={50}
                 />
@@ -217,11 +217,11 @@ export const PenumpangModal = memo(
                   id="golongan"
                   name="golongan"
                   defaultValue={selectedPenumpang?.golongan || GOLONGAN_OPTIONS[0]}
-                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 text-white"
                   required
                 >
                   {GOLONGAN_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
+                    <option key={opt} value={opt} className="text-black">
                       {opt}
                     </option>
                   ))}
@@ -232,11 +232,11 @@ export const PenumpangModal = memo(
                   id="kapal"
                   name="kapal"
                   defaultValue={selectedPenumpang?.kapal || KAPAL_OPTIONS[0]}
-                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-full selection:text-black px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 text-white"
                   required
                 >
                   {KAPAL_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
+                    <option key={opt} value={opt} className="text-black">
                       {opt}
                     </option>
                   ))}

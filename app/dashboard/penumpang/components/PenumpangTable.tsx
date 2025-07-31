@@ -15,9 +15,9 @@ const TableRow = memo(({ item, index, currentPage, itemsPerPage, isSelected, onS
     onView: (item: Penumpang) => void;
 }) => (
     <tr
-        className={`border-b border-gray-200 cursor-pointer transition-colors ${isSelected
-            ? 'bg-blue-100 hover:bg-blue-200'
-            : 'hover:bg-gray-50'
+        className={`border-b border-gray-200 cursor-pointer transition-colors text-black ${isSelected
+            ? 'bg-blue-100  hover:bg-blue-200'
+            : 'hover:bg-gray-700 text-white'
             }`}
         onClick={() => onSelect(item.id)}
     >
@@ -90,26 +90,26 @@ export const PenumpangTable = memo(({
     <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
             <thead>
-                <tr className="bg-blue-600 text-white text-center">
+                <tr className="bg-blue-900 text-white text-center">
                     <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider">
                         <input
                             type="checkbox"
                             onChange={onSelectAll}
                             checked={allChecked}
-                            className="w-5 h-5 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                            className="w-5 h-5 text-blue-600 bg-gray-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                         />
                     </th>
-                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider">No</th>
-                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider">Nama</th>
-                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider">Usia</th>
-                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider">Jenis Kelamin</th>
-                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider">Tujuan</th>
-                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider">Tanggal</th>
-                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider">No. Polisi</th>
-                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider">Jenis Kendaraan</th>
-                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider">Golongan</th>
-                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider">Kapal</th>
-                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider">Aksi</th>
+                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wide text-nowrap ">No</th>
+                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wide text-nowrap ">Nama</th>
+                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wide text-nowrap ">Usia</th>
+                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wide text-nowrap ">Jenis Kelamin</th>
+                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wide text-nowrap ">Tujuan</th>
+                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wide text-nowrap ">Tanggal</th>
+                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wide text-nowrap ">No. Polisi</th>
+                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wide text-nowrap ">Jenis Kendaraan</th>
+                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wide text-nowrap ">Golongan</th>
+                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wide text-nowrap ">Kapal</th>
+                    <th className="px-6 py-3 text-xs font-bold uppercase tracking-wide text-nowrap ">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -125,13 +125,13 @@ export const PenumpangTable = memo(({
                 ) : paginatedData.length === 0 ? (
                     <tr>
                         <td colSpan={12} className="text-center py-8">
-                            <div className="text-gray-500">
+                            <div className="text-white">
                                 {searchTerm || filterStartDate || filterEndDate ? (
                                     <div>
                                         <p className="mb-2">Tidak ada data yang sesuai dengan pencarian</p>
                                         <button
                                             onClick={onResetFilters}
-                                            className="text-blue-600 hover:text-blue-800 underline text-sm"
+                                            className="hover:text-blue-800 underline text-sm"
                                         >
                                             Reset filter pencarian
                                         </button>

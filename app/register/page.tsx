@@ -36,7 +36,7 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className='bg-gradient-to-br from-white to-green-400'>
+        <div className='bg-gradient-to-br from-black to-green-900'>
             <div className="container mx-auto h-screen flex items-center justify-center">
                 <div className='w-full max-w-lg'>
                     <div className="flex justify-center mb-4 ">
@@ -45,10 +45,10 @@ export default function RegisterPage() {
                         </div>
                     </div>
                     <div>
-                        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
+                        <h2 className="mt-6 text-center text-3xl font-bold text-white">
                             Buat Akun Baru
                         </h2>
-                        <p className="mt-2 text-center text-gray-600">
+                        <p className="mt-2 text-center text-white">
                             Sudah punya akun?{' '}
                             <Link href="/login" className="font-medium text-green-600 hover:text-green-500">
                                 Masuk di sini
