@@ -1,12 +1,11 @@
 "use server";
 
-import { Prisma, PrismaClient, golongan as GolonganEnum } from "@prisma/client";
+import { Prisma, golongan as GolonganEnum } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z, ZodError } from "zod";
 import { authOptions } from "@/app/auth";
 import { getServerSession } from "next-auth";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/app/lib/prisma"; // Menggunakan prisma client dengan Accelerate & Optimize
 
 // Skema validasi menggunakan Zod
 const penumpangSchema = z.object({

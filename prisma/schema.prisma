@@ -31,7 +31,6 @@ model User {
   Penumpang     Penumpang[]
 
   @@index([email], map: "idx_user_email")
-  @@index([id], map: "idx_user_id")
   @@index([role], map: "idx_user_role")
 }
 
@@ -90,21 +89,20 @@ enum golongan {
 
 model Penumpang {
   id             Int          @id @default(autoincrement()) @db.Integer
-  nama           String       @db.VarChar(255)
+  nama           String
   usia           Int          @db.SmallInt
   userId         String?
   jenisKelamin   jenisKelamin
-  tujuan         String       @db.VarChar(255)
+  tujuan         String
   tanggal        DateTime     @db.Timestamp(3)
-  nopol          String       @db.VarChar(15)
-  jenisKendaraan String       @db.VarChar(255)
+  nopol          String
+  jenisKendaraan String
   golongan       golongan
-  kapal          String       @db.VarChar(50)
+  kapal          String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([nama, tujuan, nopol, kapal, jenisKendaraan], map: "idx_penumpang_nama_tujuan_nopol_kapal_jenisKendaraan")
-  @@index([id], map: "idx_penumpang_id")
 }

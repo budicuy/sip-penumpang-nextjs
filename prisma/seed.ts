@@ -8,7 +8,7 @@ async function main() {
   console.log('Start seeding ...');
 
   // Delete existing data
-  await prisma.penumpang.deleteMany();
+  // await prisma.penumpang.deleteMany();
   await prisma.user.deleteMany();
 
   const userData = [
@@ -40,7 +40,7 @@ async function main() {
   }
 
   const penumpangData = [];
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 1000; i++) {
     const jenisKelamin = faker.helpers.arrayElement(['L', 'P']);
     penumpangData.push({
       nama: faker.person.firstName(),
@@ -56,7 +56,7 @@ async function main() {
   }
 
   const userData2 = [];
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 2; i++) {
     const role = faker.helpers.arrayElement(['USER', 'ADMIN', 'MANAGER']);
     userData2.push({
       name: faker.person.firstName(),

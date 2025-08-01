@@ -1,9 +1,8 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { PrismaClient, Prisma, Role } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '@/app/auth';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/app/lib/prisma'; // Menggunakan prisma client dengan Accelerate & Optimize
 
 /**
  * Membersihkan input pencarian untuk mencegah kerentanan dasar.
@@ -67,13 +66,14 @@ export async function GET(request: NextRequest) {
         }
 
         // Menjalankan dua query (mengambil data dan menghitung total) dalam satu transaksi.
+        // Dengan Prisma Accelerate, caching otomatis diterapkan untuk meningkatkan performa
         const [penumpang, total] = await prisma.$transaction([
             prisma.penumpang.findMany({
                 where: whereClause,
                 skip,
                 take: limit,
                 orderBy: { createdAt: 'desc' },
-                select: { // Hanya memilih kolom yang diperlukan
+                select: { // Hanya memilih kolom yang diperlukan untuk optimasi
                     id: true,
                     nama: true,
                     usia: true,
@@ -84,9 +84,16 @@ export async function GET(request: NextRequest) {
                     jenisKendaraan: true,
                     golongan: true,
                     kapal: true,
-                }
+                },
+                // Contoh penggunaan caching dengan Accelerate
+                // Uncomment baris di bawah untuk mengaktifkan caching
+                // cacheStrategy: { ttl: 60, tags: ['penumpang', `user:${user.id}`] }
             }),
-            prisma.penumpang.count({ where: whereClause })
+            prisma.penumpang.count({
+                where: whereClause,
+                // Caching untuk count query
+                // cacheStrategy: { ttl: 60, tags: ['penumpang-count', `user:${user.id}`] }
+            })
         ]);
 
         // Mengembalikan data beserta metadata paginasi.
